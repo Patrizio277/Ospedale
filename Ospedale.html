@@ -1,1 +1,969 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ospedale Sant Pelatus — Pronto Soccorso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<style>
+:root{
+  --navy-950:#06121a;
+  --navy-900:#0a1c28;
+  --navy-800:#11293a;
+  --navy-700:#1a3a50;
+  --teal-600:#0f6e56;
+  --teal-500:#16916f;
+  --teal-300:#5dcaa5;
+  --teal-100:#cdeee0;
+  --cream:#f4f1e6;
+  --bone:#e9e4d3;
+  --rust:#c25b3c;
+  --rust-600:#a8472b;
+  --gold:#c79a4b;
+  --red-600:#a32d2d;
+  --amber-500:#ba7517;
+  --ink:#0d1b24;
+  --paper:#fbf9f2;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--navy-950);
+  color:var(--cream);
+  font-family:'IBM Plex Sans', sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+h1,h2,h3,.serif{font-family:'Fraunces', serif;}
+::selection{background:var(--teal-500);color:white;}
+
+/* ---------- motion system ---------- */
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;}
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.97);}to{opacity:1;transform:scale(1);}}
+@keyframes ecgDraw{
+  0%{stroke-dashoffset:1400;}
+  60%{stroke-dashoffset:0;}
+  100%{stroke-dashoffset:-200;}
+}
+@keyframes ecgGlow{0%,100%{opacity:0.35;}50%{opacity:0.9;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
+@keyframes blinkDot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(93,202,165,0.5);}50%{opacity:0.5;box-shadow:0 0 0 5px rgba(93,202,165,0);}}
+
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.16,.84,.44,1), transform .7s cubic-bezier(.16,.84,.44,1);}
+.reveal.in{opacity:1;transform:translateY(0);}
+.reveal-stagger > *{opacity:0;transform:translateY(16px);transition:opacity .55s ease, transform .55s ease;}
+.reveal-stagger.in > *{opacity:1;transform:translateY(0);}
+.reveal-stagger.in > *:nth-child(1){transition-delay:.02s;}
+.reveal-stagger.in > *:nth-child(2){transition-delay:.09s;}
+.reveal-stagger.in > *:nth-child(3){transition-delay:.16s;}
+.reveal-stagger.in > *:nth-child(4){transition-delay:.23s;}
+.reveal-stagger.in > *:nth-child(5){transition-delay:.30s;}
+.reveal-stagger.in > *:nth-child(6){transition-delay:.37s;}
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+input,select{font-family:inherit;}
+
+.btn{position:relative;overflow:hidden;}
+.btn::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle, rgba(93,202,165,0.35) 0%, transparent 70%);
+  opacity:0;transform:scale(0.4);transition:opacity .4s, transform .5s;
+  pointer-events:none;
+}
+.btn:active::after{opacity:1;transform:scale(1.6);transition:0s;}
+.btn{transition:border-color .2s, color .2s, background .2s, transform .15s;}
+.btn:active{transform:scale(0.97);}
+.btn-solid{transition:background .2s, border-color .2s, transform .15s, box-shadow .25s;}
+.btn-solid:hover{box-shadow:0 6px 22px -8px rgba(15,110,86,0.55);transform:translateY(-1px);}
+.btn-solid:active{transform:translateY(0) scale(0.97);}
+
+/* ---------- topbar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 5vw;
+  background:rgba(6,18,26,0.86);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(244,241,230,0.08);
+  animation:fadeIn .8s ease both;
+}
+.brand{display:flex;align-items:center;gap:12px;}
+.cross{
+  width:30px;height:30px;position:relative;flex-shrink:0;
+}
+.cross::before,.cross::after{
+  content:"";position:absolute;background:var(--teal-300);
+  box-shadow:0 0 14px rgba(93,202,165,0.35);
+}
+.cross::before{left:12px;top:0;width:6px;height:30px;}
+.cross::after{top:12px;left:0;width:30px;height:6px;}
+.brand-name{font-size:18px;letter-spacing:0.3px;}
+.brand-sub{font-size:11px;color:var(--teal-300);text-transform:uppercase;letter-spacing:1.5px;}
+.nav-links{display:flex;gap:28px;font-size:14px;color:var(--bone);}
+.nav-links a{text-decoration:none;opacity:0.8;transition:opacity .15s;}
+.nav-links a:hover{opacity:1;}
+.topbar-actions{display:flex;align-items:center;gap:12px;}
+.btn{
+  border:1px solid rgba(244,241,230,0.25);
+  background:transparent;color:var(--cream);
+  padding:9px 18px;border-radius:3px;font-size:13.5px;font-weight:500;
+  transition:all .15s;
+}
+.btn:hover{border-color:var(--teal-300);color:var(--teal-300);}
+.btn-solid{background:var(--teal-600);border-color:var(--teal-600);color:white;}
+.btn-solid:hover{background:var(--teal-500);border-color:var(--teal-500);color:white;}
+.btn-danger{border-color:rgba(194,91,60,0.5);}
+.btn-danger:hover{border-color:var(--rust);color:var(--rust);}
+.btn-sm{padding:6px 12px;font-size:12.5px;}
+
+/* ---------- hero ---------- */
+.hero{
+  position:relative;min-height:78vh;display:flex;align-items:center;
+  padding:0 5vw;overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(15,110,86,0.35), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 10% 80%, rgba(194,91,60,0.18), transparent 60%);
+}
+.hero-bg::after{
+  content:"";position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(244,241,230,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244,241,230,0.025) 1px, transparent 1px);
+  background-size:42px 42px;
+  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 60% 40%, black, transparent 75%);
+  mask-image:radial-gradient(ellipse 70% 60% at 60% 40%, black, transparent 75%);
+}
+.pulse-line{
+  position:absolute;left:0;right:0;bottom:14%;height:60px;z-index:0;opacity:0.7;
+}
+.pulse-line path{
+  stroke-dasharray:1400;
+  animation:ecgDraw 4.5s linear infinite, ecgGlow 4.5s linear infinite;
+}
+.hero-content{position:relative;z-index:1;max-width:680px;padding:60px 0;}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--teal-300);
+  border:1px solid rgba(93,202,165,0.3);padding:6px 14px;border-radius:30px;margin-bottom:26px;
+  animation:fadeUp .7s cubic-bezier(.16,.84,.44,1) both;
+}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--rust);animation:blink 1.6s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.25;}}
+.hero h1{font-size:clamp(36px,5.4vw,62px);line-height:1.04;font-weight:500;margin:0 0 22px;
+  animation:fadeUp .8s .08s cubic-bezier(.16,.84,.44,1) both;}
+.hero h1 em{font-style:italic;color:var(--teal-300);}
+.hero p{font-size:17px;line-height:1.65;color:var(--bone);max-width:520px;margin:0 0 34px;
+  animation:fadeUp .8s .16s cubic-bezier(.16,.84,.44,1) both;}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap;
+  animation:fadeUp .8s .24s cubic-bezier(.16,.84,.44,1) both;}
+
+.vitals-strip{
+  position:relative;z-index:1;display:flex;gap:0;
+  border-top:1px solid rgba(244,241,230,0.1);
+  margin-top:50px;
+  animation:fadeUp .9s .32s cubic-bezier(.16,.84,.44,1) both;
+}
+.vital{
+  flex:1;padding:18px 22px 0;border-right:1px solid rgba(244,241,230,0.1);
+  transition:transform .2s ease;
+}
+.vital:hover{transform:translateY(-2px);}
+.vital:last-child{border-right:none;}
+.vital-num{font-family:'Fraunces',serif;font-size:26px;color:var(--teal-300);}
+.vital-label{font-size:12px;color:var(--bone);opacity:0.7;margin-top:4px;}
+
+/* ---------- sections (logged out) ---------- */
+.section{padding:90px 5vw;max-width:1180px;margin:0 auto;}
+.section-head{max-width:560px;margin-bottom:50px;}
+.section-eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--rust);margin-bottom:10px;}
+.section-head h2{font-size:clamp(26px,3.4vw,38px);font-weight:500;margin:0 0 14px;}
+.section-head p{color:var(--bone);opacity:0.85;line-height:1.6;font-size:15.5px;}
+
+.tier-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(244,241,230,0.1);border:1px solid rgba(244,241,230,0.1);}
+.tier-card{background:var(--navy-900);padding:30px 26px;transition:background .25s ease, transform .25s ease;}
+.tier-card:hover{background:var(--navy-800);transform:translateY(-3px);}
+.tier-tag{display:inline-block;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;border-radius:3px;margin-bottom:16px;}
+.tier-verde .tier-tag{background:rgba(93,202,165,0.15);color:var(--teal-300);}
+.tier-gialla .tier-tag{background:rgba(186,117,23,0.18);color:#e3ad57;}
+.tier-rossa .tier-tag{background:rgba(163,45,45,0.2);color:#e07a7a;}
+.tier-card h3{margin:0 0 10px;font-size:18px;}
+.tier-card ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--bone);opacity:0.85;line-height:1.9;}
+
+.roles-band{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+}
+.role-pill{
+  border:1px solid rgba(244,241,230,0.12);padding:18px 16px;border-radius:6px;
+  background:rgba(244,241,230,0.02);
+  transition:border-color .2s ease, transform .2s ease, background .2s ease;
+}
+.role-pill:hover{border-color:rgba(93,202,165,0.4);transform:translateY(-3px);background:rgba(93,202,165,0.04);}
+.role-pill i{font-size:20px;color:var(--teal-300);margin-bottom:10px;display:block;transition:transform .25s ease;}
+.role-pill:hover i{transform:scale(1.12);}
+.role-pill .rt{font-size:14px;font-weight:500;margin-bottom:3px;}
+.role-pill .rd{font-size:12px;color:var(--bone);opacity:0.65;line-height:1.4;}
+
+footer{padding:40px 5vw;border-top:1px solid rgba(244,241,230,0.08);font-size:12.5px;color:var(--bone);opacity:0.5;text-align:center;}
+
+/* ---------- auth modal ---------- */
+.overlay{
+  position:fixed;inset:0;background:rgba(6,18,26,0.78);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;
+  animation:fadeIn .25s ease both;
+}
+.hidden{display:none !important;}
+.auth-card{
+  background:var(--navy-900);border:1px solid rgba(244,241,230,0.12);
+  width:100%;max-width:420px;border-radius:8px;padding:36px 34px;position:relative;
+  animation:scaleIn .3s cubic-bezier(.16,.84,.44,1) both;
+  box-shadow:0 24px 60px -20px rgba(0,0,0,0.5);
+}
+.auth-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--bone);font-size:20px;opacity:0.6;transition:opacity .15s, transform .15s;}
+.auth-close:hover{opacity:1;transform:rotate(90deg);}
+.auth-tabs{display:flex;gap:0;margin-bottom:26px;border-bottom:1px solid rgba(244,241,230,0.12);}
+.auth-tab{flex:1;text-align:center;padding:0 0 12px;font-size:13.5px;color:var(--bone);opacity:0.55;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;transition:opacity .2s, border-color .2s, color .2s;}
+.auth-tab.active{opacity:1;color:var(--teal-300);border-bottom-color:var(--teal-300);}
+.field{margin-bottom:16px;animation:fadeUp .35s ease both;}
+.field label{display:block;font-size:12.5px;color:var(--bone);opacity:0.75;margin-bottom:7px;}
+.field input,.field select{
+  width:100%;padding:11px 12px;background:var(--navy-800);border:1px solid rgba(244,241,230,0.15);
+  color:var(--cream);border-radius:4px;font-size:14px;transition:border-color .2s, box-shadow .2s;
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--teal-300);box-shadow:0 0 0 3px rgba(93,202,165,0.15);}
+.auth-msg{font-size:12.5px;padding:10px 12px;border-radius:4px;margin-bottom:14px;animation:fadeUp .25s ease both;}
+.auth-msg.err{background:rgba(163,45,45,0.18);color:#f0a3a3;}
+.auth-msg.ok{background:rgba(15,110,86,0.2);color:var(--teal-300);}
+.full{width:100%;}
+.note{font-size:11.5px;color:var(--bone);opacity:0.5;margin-top:10px;line-height:1.5;}
+
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.35);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;vertical-align:-2px;margin-right:7px;}
+
+/* ---------- app shell (logged in) ---------- */
+.app{display:none;min-height:100vh;}
+.app.active{display:block;animation:fadeIn .5s ease both;}
+.landing.hidden-app{display:none;}
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:230px;flex-shrink:0;background:var(--navy-900);border-right:1px solid rgba(244,241,230,0.08);
+  padding:24px 0;display:flex;flex-direction:column;
+}
+.sidebar .brand{padding:0 22px 22px;border-bottom:1px solid rgba(244,241,230,0.08);margin-bottom:18px;}
+.side-link{
+  display:flex;align-items:center;gap:11px;padding:11px 22px;font-size:13.5px;color:var(--bone);opacity:0.7;
+  border-left:2px solid transparent;position:relative;transition:opacity .18s ease, background .18s ease, border-color .18s ease;
+}
+.side-link i{font-size:17px;transition:transform .18s ease;}
+.side-link.active{opacity:1;background:rgba(93,202,165,0.08);border-left-color:var(--teal-300);color:var(--teal-300);}
+.side-link:hover{opacity:1;cursor:pointer;background:rgba(244,241,230,0.03);}
+.side-link:hover i{transform:translateX(2px);}
+.side-bottom{margin-top:auto;padding:14px 22px 0;border-top:1px solid rgba(244,241,230,0.08);}
+.user-chip{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:13px;}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--teal-600);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:white;flex-shrink:0;box-shadow:0 0 0 3px rgba(93,202,165,0.12);}
+.user-chip .un{font-weight:500;}
+.user-chip .ur{font-size:11px;color:var(--teal-300);text-transform:uppercase;letter-spacing:0.5px;}
+
+.main{flex:1;padding:34px 42px;max-width:1000px;}
+.main h2{font-size:24px;font-weight:500;margin:0 0 4px;}
+.main .sub{color:var(--bone);opacity:0.6;font-size:13.5px;margin-bottom:28px;}
+.view{display:none;}
+.view.active{display:block;animation:fadeUp .45s cubic-bezier(.16,.84,.44,1) both;}
+
+.card{background:var(--navy-900);border:1px solid rgba(244,241,230,0.1);border-radius:8px;padding:22px 24px;margin-bottom:16px;animation:fadeUp .4s ease both;}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:30px;}
+.stat{background:rgba(244,241,230,0.03);border:1px solid rgba(244,241,230,0.08);border-radius:6px;padding:16px 18px;transition:transform .2s ease, border-color .2s ease;animation:fadeUp .4s ease both;}
+.stat:hover{transform:translateY(-2px);border-color:rgba(93,202,165,0.3);}
+.stat .v{font-family:'Fraunces',serif;font-size:24px;color:var(--teal-300);}
+.stat .l{font-size:11.5px;color:var(--bone);opacity:0.6;margin-top:4px;}
+
+.search-bar{display:flex;gap:10px;margin-bottom:20px;}
+.search-bar input,.search-bar select{padding:10px 13px;background:var(--navy-800);border:1px solid rgba(244,241,230,0.15);color:var(--cream);border-radius:4px;font-size:13.5px;transition:border-color .2s;}
+.search-bar input:focus,.search-bar select:focus{outline:none;border-color:var(--teal-300);}
+.search-bar input{flex:1;}
+
+.malattia{border-bottom:1px solid rgba(244,241,230,0.08);padding:16px 0;animation:fadeUp .35s ease both;}
+.malattia:last-child{border-bottom:none;}
+.malattia-head{display:flex;align-items:center;gap:10px;cursor:pointer;}
+.malattia-head .tag{font-size:10.5px;padding:3px 8px;border-radius:3px;text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;}
+.tag-verde{background:rgba(93,202,165,0.15);color:var(--teal-300);}
+.tag-gialla{background:rgba(186,117,23,0.18);color:#e3ad57;}
+.tag-rossa{background:rgba(163,45,45,0.2);color:#e07a7a;}
+.malattia-head .mt{font-size:15px;font-weight:500;flex:1;transition:color .15s;}
+.malattia-head:hover .mt{color:var(--teal-300);}
+.malattia-head i{opacity:0.5;transition:transform .25s ease;}
+.malattia-body{
+  max-height:0;overflow:hidden;opacity:0;
+  transition:max-height .35s cubic-bezier(.16,.84,.44,1), opacity .3s ease, padding .3s ease;
+  padding:0 0 0 4px;font-size:13.5px;color:var(--bone);line-height:1.8;
+}
+.malattia-body div{margin-bottom:4px;}
+.malattia-body b{color:var(--cream);font-weight:500;}
+.malattia.open .malattia-body{max-height:260px;opacity:1;padding:14px 0 4px 4px;}
+.malattia.open .malattia-head i{transform:rotate(90deg);}
+.cura-pill{display:inline-block;background:rgba(15,110,86,0.18);color:var(--teal-300);padding:2px 9px;border-radius:3px;font-size:12.5px;}
+
+.booking{border:1px solid rgba(244,241,230,0.1);border-radius:6px;padding:16px 18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:14px;transition:border-color .2s, transform .2s;animation:fadeUp .35s ease both;}
+.booking:hover{border-color:rgba(244,241,230,0.22);transform:translateX(2px);}
+.booking .bm{font-weight:500;font-size:14.5px;}
+.booking .bd{font-size:12.5px;color:var(--bone);opacity:0.65;margin-top:3px;}
+.status{font-size:11px;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;}
+.status-attesa{background:rgba(186,117,23,0.18);color:#e3ad57;animation:blinkDot 2s infinite;}
+.status-confermata{background:rgba(93,202,165,0.15);color:var(--teal-300);}
+.status-completata{background:rgba(244,241,230,0.1);color:var(--bone);}
+.status-rifiutata{background:rgba(163,45,45,0.2);color:#e07a7a;}
+
+.empty{text-align:center;padding:60px 20px;color:var(--bone);opacity:0.5;font-size:13.5px;animation:fadeIn .4s ease both;}
+.empty i{font-size:32px;display:block;margin-bottom:12px;opacity:0.4;}
+
+.reparto-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:6px;}
+.reparto-card{border:1px solid rgba(244,241,230,0.12);border-radius:6px;padding:16px;cursor:pointer;transition:border-color .18s ease, transform .18s ease, background .18s ease;animation:fadeUp .35s ease both;}
+.reparto-card:hover{border-color:var(--teal-300);transform:translateY(-2px);}
+.reparto-card.sel{border-color:var(--teal-300);background:rgba(93,202,165,0.06);box-shadow:0 0 0 1px var(--teal-300) inset;}
+.reparto-card i{font-size:18px;color:var(--teal-300);transition:transform .2s ease;}
+.reparto-card:hover i{transform:scale(1.15);}
+.reparto-card .rn{font-size:13.5px;font-weight:500;margin-top:8px;}
+
+@media (max-width:880px){
+  .nav-links{display:none;}
+  .tier-grid{grid-template-columns:1fr;}
+  .roles-band{grid-template-columns:repeat(2,1fr);}
+  .app-shell{flex-direction:column;}
+  .sidebar{width:100%;flex-direction:row;overflow-x:auto;padding:12px;}
+  .sidebar .brand{display:none;}
+  .side-bottom{display:none;}
+  .main{padding:22px;}
+  .stat-row{grid-template-columns:repeat(2,1fr);}
+  .reparto-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div id="landing">
+  <div class="topbar">
+    <div class="brand">
+      <div class="cross"></div>
+      <div>
+        <div class="brand-name">Sant Pelatus</div>
+        <div class="brand-sub">Pronto Soccorso</div>
+      </div>
+    </div>
+    <div class="nav-links">
+      <a href="#triage">Triage</a>
+      <a href="#reparti">Reparti</a>
+      <a href="#personale">Personale</a>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn" onclick="openAuth('login')">Accedi</button>
+      <button class="btn btn-solid" onclick="openAuth('register')">Registrati</button>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <svg class="pulse-line" viewBox="0 0 1000 60" preserveAspectRatio="none">
+      <polyline points="0,30 110,30 130,30 145,8 158,52 172,18 186,30 320,30 700,30 720,30 735,8 748,52 762,18 776,30 1000,30" fill="none" stroke="#5dcaa5" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div class="hero-content">
+      <div class="eyebrow"><span class="dot"></span> Triage attivo — accettazione continua</div>
+      <h1>Diagnosi precise.<br>Cure <em>documentate</em>.</h1>
+      <p>Il presidio di pronto soccorso del server: un protocollo clinico unico per sintomi, parametri e terapie, consultabile dal personale autorizzato e accessibile ai pazienti per la prenotazione.</p>
+      <div class="hero-actions">
+        <button class="btn btn-solid" onclick="openAuth('register')"><i class="ti ti-calendar-plus" style="vertical-align:-2px;margin-right:6px;"></i>Prenota una visita</button>
+        <button class="btn" onclick="openAuth('login')"><i class="ti ti-id-badge-2" style="vertical-align:-2px;margin-right:6px;"></i>Accesso personale sanitario</button>
+      </div>
+    </div>
+    <div class="vitals-strip" style="position:absolute;bottom:0;left:5vw;right:5vw;">
+      <div class="vital"><div class="vital-num">3</div><div class="vital-label">Fasce di gravità</div></div>
+      <div class="vital"><div class="vital-num">38</div><div class="vital-label">Patologie protocollate</div></div>
+      <div class="vital"><div class="vital-num">30+</div><div class="vital-label">Qualifiche professionali</div></div>
+      <div class="vital"><div class="vital-num">24h</div><div class="vital-label">Triage attivo</div></div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="triage">
+    <div class="section-head">
+      <div class="section-eyebrow">Protocollo di triage</div>
+      <h2>Tre fasce di gravità, un solo registro</h2>
+      <p>Ogni accettazione viene classificata per urgenza prima della visita. Il personale consulta la scheda diagnostica completa — sintomi, parametri, esami e terapia — una volta autenticato.</p>
+    </div>
+    <div class="tier-grid reveal-stagger">
+      <div class="tier-card tier-verde">
+        <span class="tier-tag">Fascia verde</span>
+        <h3>Cure ambulatoriali</h3>
+        <ul><li>Mal di denti, mal di testa</li><li>Ipertensione, ipotensione</li><li>Bradicardia, candida</li><li>Richiede tessera sanitaria</li></ul>
+      </div>
+      <div class="tier-card tier-gialla">
+        <span class="tier-tag">Fascia gialla</span>
+        <h3>Somministrazione diretta</h3>
+        <ul><li>Influenza, polmonite, bronchite</li><li>Fratture, ustioni</li><li>Gastroenterite, tachicardia</li><li>Diagnosi e cura immediata</li></ul>
+      </div>
+      <div class="tier-card tier-rossa">
+        <span class="tier-tag">Fascia rossa</span>
+        <h3>Emergenza chirurgica</h3>
+        <ul><li>Ictus, trombosi venosa</li><li>Tumori, embolia</li><li>Ferite da arma da fuoco</li><li>Chiamata medico immediata</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="personale">
+    <div class="section-head">
+      <div class="section-eyebrow">Organico ospedaliero</div>
+      <h2>Quattro aree, una sola cartella clinica</h2>
+      <p>Infermeria, medicina, farmacia e veterinaria operano su un unico registro pazienti, ciascuna con la propria gerarchia di ruoli e autorizzazioni.</p>
+    </div>
+    <div class="roles-band reveal-stagger">
+      <div class="role-pill"><i class="ti ti-stethoscope"></i><div class="rt">Infermeria</div><div class="rd">Tirocinante → Infermiere → Capo sala</div></div>
+      <div class="role-pill"><i class="ti ti-heartbeat"></i><div class="rt">Medicina</div><div class="rd">Medico → Specialista → Primario</div></div>
+      <div class="role-pill"><i class="ti ti-pill"></i><div class="rt">Farmacia</div><div class="rd">Assistente → Farmacista → Dirigente</div></div>
+      <div class="role-pill"><i class="ti ti-paw"></i><div class="rt">Veterinaria</div><div class="rd">Pratico → Chirurgo → Direttore</div></div>
+    </div>
+  </section>
+
+  <footer>Ospedale Sant Pelatus — Pronto Soccorso · registro clinico interno del server</footer>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="overlay hidden" id="authOverlay">
+  <div class="auth-card">
+    <button class="auth-close" onclick="closeAuth()"><i class="ti ti-x"></i></button>
+    <div class="auth-tabs">
+      <button class="auth-tab" id="tabLogin" onclick="switchTab('login')">Accedi</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">Registrati</button>
+    </div>
+    <div id="authMsg"></div>
+
+    <div id="loginForm">
+      <div class="field"><label>Nick Minecraft</label><input id="loginNick" placeholder="Es. Steve_92"></div>
+      <div class="field"><label>Password</label><input id="loginPass" type="password" placeholder="••••••••"></div>
+      <button class="btn btn-solid full" onclick="doLogin()">Entra in corsia</button>
+    </div>
+
+    <div id="registerForm" class="hidden">
+      <div class="field"><label>Nick Minecraft</label><input id="regNick" placeholder="Es. Steve_92"></div>
+      <div class="field"><label>Password</label><input id="regPass" type="password" placeholder="Minimo 4 caratteri"></div>
+      <div class="field">
+        <label>Tipo di account</label>
+        <select id="regType">
+          <option value="paziente">Paziente</option>
+          <option value="staff">Personale ospedaliero (richiede approvazione)</option>
+        </select>
+      </div>
+      <div class="field hidden" id="regRoleField">
+        <label>Ruolo richiesto</label>
+        <select id="regRole">
+          <option value="infermiere_tirocinante">Infermiere tirocinante</option>
+          <option value="infermiere">Infermiere</option>
+          <option value="oss">OSS</option>
+          <option value="medico">Medico</option>
+          <option value="medico_chirurgo">Medico chirurgo</option>
+          <option value="radiologo">Radiologo</option>
+          <option value="farmacista">Farmacista</option>
+          <option value="veterinario">Veterinario</option>
+          <option value="capo_sala">Capo sala</option>
+          <option value="primario">Primario</option>
+          <option value="direzione">Direzione generale</option>
+        </select>
+      </div>
+      <button class="btn btn-solid full" onclick="doRegister()">Crea account</button>
+      <div class="note">Gli account "Personale ospedaliero" restano in attesa finché la Direzione non approva il ruolo. I pazienti accedono subito.</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="app-shell">
+    <div class="sidebar">
+      <div class="brand"><div class="cross"></div><div><div class="brand-name" style="font-size:15px;">Sant Pelatus</div><div class="brand-sub" style="font-size:10px;">Pronto Soccorso</div></div></div>
+
+      <div id="sideLinks"></div>
+
+      <div class="side-bottom">
+        <div class="user-chip">
+          <div class="avatar" id="avatarChip">?</div>
+          <div><div class="un" id="userChipName">—</div><div class="ur" id="userChipRole">—</div></div>
+        </div>
+        <button class="btn btn-sm btn-danger full" onclick="doLogout()">Esci</button>
+      </div>
+    </div>
+
+    <div class="main">
+
+      <div class="view" id="view-home">
+        <h2>Bentornato, <span id="homeName"></span></h2>
+        <div class="sub" id="homeSub"></div>
+        <div class="stat-row" id="homeStats"></div>
+        <div class="card" id="homeFeed"></div>
+      </div>
+
+      <div class="view" id="view-prenota">
+        <h2>Prenota una visita</h2>
+        <div class="sub">Scegli il reparto, descrivi il sintomo e invia la richiesta.</div>
+        <div class="card">
+          <label style="font-size:12.5px;color:var(--bone);opacity:0.75;display:block;margin-bottom:10px;">Reparto</label>
+          <div class="reparto-grid" id="repartoGrid"></div>
+          <div class="field" style="margin-top:20px;"><label>Sintomo / motivo della visita</label><input id="bookSintomo" placeholder="Es. forte dolore alla bocca"></div>
+          <button class="btn btn-solid" onclick="creaPrenotazione()">Invia richiesta</button>
+        </div>
+      </div>
+
+      <div class="view" id="view-mieprenotazioni">
+        <h2>Le mie prenotazioni</h2>
+        <div class="sub">Stato delle richieste inviate al pronto soccorso.</div>
+        <div id="listaMiePrenotazioni"></div>
+      </div>
+
+      <div class="view" id="view-codaPazienti">
+        <h2>Coda pazienti</h2>
+        <div class="sub">Richieste in attesa o confermate per il tuo reparto.</div>
+        <div id="listaCoda"></div>
+      </div>
+
+      <div class="view" id="view-database">
+        <h2>Database patologie</h2>
+        <div class="sub">Sintomi, parametri e cure — consulta prima di somministrare.</div>
+        <div class="search-bar">
+          <input id="searchMalattia" placeholder="Cerca per nome, sintomo o cura..." oninput="renderDatabase()">
+          <select id="filterFascia" onchange="renderDatabase()">
+            <option value="">Tutte le fasce</option>
+            <option value="verde">Verde</option>
+            <option value="gialla">Gialla</option>
+            <option value="rossa">Rossa</option>
+          </select>
+        </div>
+        <div class="card" id="databaseList"></div>
+      </div>
+
+      <div class="view" id="view-approvazioni">
+        <h2>Approvazioni personale</h2>
+        <div class="sub">Account in attesa di conferma del ruolo richiesto.</div>
+        <div id="listaApprovazioni"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- DATI MEDICI (dal protocollo) ---------------- */
+const MALATTIE = [
+{n:"Mal di denti",f:"verde",sint:"Forte dolore alla bocca",par:"Dolore ai denti",cura:"MomentAct",causa:"Consumo eccessivo di cibi dolci"},
+{n:"Acne",f:"verde",sint:"Bruciore, pelle grassa, pori ostruiti",par:"Eccesso di sebo, infiammazione, squame",cura:"Betadine",causa:"Ignota"},
+{n:"Asma",f:"verde",sint:"Fatica a respirare",par:"Respirazione acuta",cura:"Inalatore (solo su prescrizione, non somministrabile)",causa:"Ignota"},
+{n:"Bradicardia",f:"verde",sint:"Sensazione di svenimento, mancanza di forze",par:"Battito rallentato",cura:"Atropina",causa:"Infezione"},
+{n:"Ipertensione",f:"verde",sint:"Sudorazione fredda, nervosismo, agitazione",par:"Battito accelerato · P.A. 140-180 / P.D. 90-110",cura:"Vasotec",causa:"Ignota"},
+{n:"Ipotensione",f:"verde",sint:"Mancanza di forze",par:"Battito rallentato · P.A. 50-90 / P.D. 30-60",cura:"Florinef",causa:"Ignota"},
+{n:"Mal di testa",f:"verde",sint:"Mal di testa",par:"Spossatezza, occhiaie",cura:"MomentAct",causa:"Stress o esposizione alla pioggia"},
+{n:"Mal di gola",f:"verde",sint:"Difficoltà a parlare, dolore alle tonsille",par:"Gola infiammata",cura:"Brufen",causa:"Aver urlato troppo"},
+{n:"Cistite",f:"verde",sint:"Gonfiore e bruciore addominale",par:"Analisi urine: siero denso e rossastro",cura:"Monuril",causa:"Infezione",analisi:"Urine"},
+{n:"Candida",f:"verde",sint:"Bruciore, rossore, perdite bianche",par:"Prurito, secrezioni, pelle umida/irritata",cura:"Tonimer",causa:"Ignota"},
+{n:"Lebbra",f:"verde",sint:"Perdita di sensibilità, lesioni",par:"Macchie chiare/scure sulla pelle",cura:"Ganazolo",causa:"Ignota"},
+{n:"Elettrocuzione",f:"gialla",sint:"Pelle arrossata, squame, vesciche",par:"Infiammazione cutanea",cura:"Betadine",causa:"Contatto diretto con cavi elettrici"},
+{n:"Influenza",f:"gialla",sint:"Febbre, mancanza di forze, equilibrio, starnuti",par:"Temperatura ≥ 37.5°",cura:"Tachipirina",causa:"Esposizione alla pioggia"},
+{n:"Polmonite",f:"gialla",sint:"Suoni assordanti, luci fastidiose, occhi lucidi",par:"39° · respirazione acuta · bocca e naso secchi",cura:"Augmentin",causa:"Esposizione alla pioggia"},
+{n:"Bronchite",f:"gialla",sint:"Febbre, occhi lucidi, mancanza di forze",par:"37.5° · ecografia: infiammazione bronchiale",cura:"Klacid",causa:"Esposizione alla pioggia"},
+{n:"Raffreddore",f:"gialla",sint:"Fatica a respirare",par:"Congestione nasale",cura:"Tachipirina",causa:"Esposizione alla pioggia"},
+{n:"Gastroenterite",f:"gialla",sint:"Vomito, giramenti di testa, mancanza di forze",par:"37.5° · bocca e naso secchi",cura:"Enterogermina",causa:"Ignota"},
+{n:"Diarrea",f:"gialla",sint:"Suoni assordanti, occhi lucidi, mancanza di forze",par:"37.5° · gonfiore addominale",cura:"Imodium",causa:"Ignota"},
+{n:"Frattura",f:"gialla",sint:"Dolori alle ossa",par:"Radiografia: fisionomia ossea deformata",cura:"Gesso",causa:"Caduta da un posto alto"},
+{n:"Eritema cutaneo",f:"gialla",sint:"Pelle arrossata, squame, vesciche",par:"Battito accelerato, infiammazione cutanea",cura:"Bepanthenol",causa:"Ignota"},
+{n:"Svenimento",f:"gialla",sint:"Svenimento, vista annebbiata",par:"Battito rallentato, viso pallido",cura:"Tazza di acqua calda",causa:"Ansia, prelievo in condizioni difficili o ubriachezza"},
+{n:"Ipotermia",f:"gialla",sint:"Pelle arrossata, squame, vesciche",par:"35° · battito rallentato",cura:"Noradrenalina",causa:"Esposizione alla pioggia o annegamento"},
+{n:"Tachicardia",f:"gialla",sint:"Nervosismo e agitazione",par:"Battito molto accelerato",cura:"Tenormin",causa:"Ignota"},
+{n:"Meningite",f:"gialla",sint:"Brividi, giramenti di testa, mancanza di forze",par:"39° · TAC: danni cerebrali · eruzione cutanea",cura:"Rocefin",causa:"Ignota"},
+{n:"Sindrome di Tourette",f:"gialla",sint:"Fatica a tenere oggetti, tremori",par:"TAC: accumulo minerali nel lobo frontale",cura:"Passa da sola col tempo",causa:"Infezione"},
+{n:"Dermatite",f:"gialla",sint:"Dolore sulla ferita, perdita di sangue",par:"Sanguinamento cutaneo · analisi: 18-22",cura:"Bentelan",causa:"Ignota",analisi:"Anti-Transglutaminasi"},
+{n:"Covid-19",f:"gialla",sint:"Febbre, giramenti di testa, mancanza di forze",par:"40° · analisi: Sars Cov 2 positivo",cura:"Nurofen",causa:"Ignota",analisi:"Sars Cov 2"},
+{n:"Tetano",f:"gialla",sint:"Fuoriuscita di sangue dalla ferita",par:"Sanguinamento cutaneo · analisi positiva",cura:"Vaccino DTP (medico specialista)",causa:"Ferita non trattata",analisi:"Clostridium Tetani"},
+{n:"Varicella",f:"gialla",sint:"Febbre, suoni assordanti, occhi lucidi",par:"38° · eruzione cutanea · IgG positivo",cura:"Zovirax",causa:"Ignota",analisi:"IgG"},
+{n:"Mononucleosi",f:"gialla",sint:"Febbre, mancanza di forze ed equilibrio",par:"38° fissa · bilirubina 2",cura:"Brufen",causa:"Ignota",analisi:"Bilirubina"},
+{n:"Colite",f:"gialla",sint:"Bruciori intestinali",par:"Gonfiore e bruciore addominale",cura:"Enterogermina",causa:"Ignota"},
+{n:"Morbillo",f:"gialla",sint:"Macchie sul corpo, eruzione cutanea",par:"Macchie rosse diffuse",cura:"Ganazolo",causa:"Ignota"},
+{n:"Ictus",f:"rossa",sint:"Sudorazione fredda, batticuore, agitazione",par:"P.A. 140-180/90-110 · trigliceridi 240-260",cura:"Operazione",causa:"Ignota"},
+{n:"Trombosi venosa",f:"rossa",sint:"Occhi lucidi, mancanza di forze, suoni alti",par:"40° · TAC: ostruzione vena arto",cura:"Operazione",causa:"Ignota"},
+{n:"Tumore cerebrale",f:"rossa",sint:"Febbre, suoni alti, mancanza di forze",par:"38.5° · TAC: massa nel cervello",cura:"Operazione",causa:"Ignota"},
+{n:"Tumore al pancreas",f:"rossa",sint:"Gonfiore e bruciore addominale",par:"Ecografia: massa nel pancreas",cura:"Operazione",causa:"Ignota"},
+{n:"Tumore polmonare",f:"rossa",sint:"Tossire sangue, mancanza di forze",par:"39° · ecografia: massa nei polmoni",cura:"Operazione",causa:"Ignota"},
+{n:"Embolia",f:"rossa",sint:"Respiro affannoso, dolore toracico",par:"Ossigenazione bassa",cura:"Operazione",causa:"Ignota"},
+{n:"Ferita da proiettile",f:"rossa",sint:"Emorragia da arma da fuoco",par:"TAC urgente",cura:"TAC + chirurgia",causa:"Trauma da arma da fuoco"},
+];
+
+const REPARTI = [
+ {id:"medicina", nome:"Medicina generale", icon:"ti-stethoscope"},
+ {id:"chirurgia", nome:"Chirurgia / Emergenza", icon:"ti-cut"},
+ {id:"farmacia", nome:"Farmacia", icon:"ti-pill"},
+ {id:"radiologia", nome:"Radiologia / TAC", icon:"ti-scan"},
+ {id:"dermatologia", nome:"Dermatologia", icon:"ti-droplet"},
+ {id:"veterinaria", nome:"Veterinaria", icon:"ti-paw"},
+];
+
+const STAFF_ROLES = {
+  infermiere_tirocinante:"Infermiere tirocinante", infermiere:"Infermiere", oss:"OSS",
+  medico:"Medico", medico_chirurgo:"Medico chirurgo", radiologo:"Radiologo",
+  farmacista:"Farmacista", veterinario:"Veterinario", capo_sala:"Capo sala",
+  primario:"Primario", direzione:"Direzione generale"
+};
+const ADMIN_ROLES = ["primario","direzione"];
+
+let currentUser = null;
+let selectedReparto = null;
+
+/* ---------------- AUTH UI ---------------- */
+function openAuth(tab){
+  document.getElementById('authOverlay').classList.remove('hidden');
+  switchTab(tab);
+}
+function closeAuth(){ document.getElementById('authOverlay').classList.add('hidden'); }
+function switchTab(tab){
+  document.getElementById('authMsg').innerHTML='';
+  document.getElementById('tabLogin').classList.toggle('active', tab==='login');
+  document.getElementById('tabRegister').classList.toggle('active', tab==='register');
+  document.getElementById('loginForm').classList.toggle('hidden', tab!=='login');
+  document.getElementById('registerForm').classList.toggle('hidden', tab!=='register');
+}
+document.getElementById('regType').addEventListener('change', e=>{
+  document.getElementById('regRoleField').classList.toggle('hidden', e.target.value!=='staff');
+});
+function showMsg(text, type){
+  document.getElementById('authMsg').innerHTML = `<div class="auth-msg ${type}">${text}</div>`;
+}
+
+function setBtnLoading(btn, loading, originalHtml){
+  if(loading){ btn.dataset.orig = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span>Verifica in corso'; btn.disabled = true; }
+  else { btn.innerHTML = btn.dataset.orig || originalHtml; btn.disabled = false; }
+}
+
+async function doRegister(){
+  const btn = event.currentTarget;
+  const nick = document.getElementById('regNick').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const type = document.getElementById('regType').value;
+  const role = document.getElementById('regRole').value;
+  if(!nick || !/^[a-zA-Z0-9_]{3,16}$/.test(nick)){ showMsg('Inserisci un nick Minecraft valido (3-16 caratteri, lettere/numeri/_).','err'); return; }
+  if(pass.length < 4){ showMsg('La password deve avere almeno 4 caratteri.','err'); return; }
+  setBtnLoading(btn, true);
+  const key = 'utenti:'+nick.toLowerCase();
+  try{
+    await window.storage.get(key, true);
+    showMsg('Questo nick è già registrato.','err');
+    setBtnLoading(btn, false);
+    return;
+  }catch(e){}
+  const utente = {
+    nick, pass,
+    tipo: type,
+    ruolo: type==='staff' ? role : 'paziente',
+    stato: type==='staff' ? 'in_attesa' : 'attivo',
+    creato: Date.now()
+  };
+  try{
+    await window.storage.set(key, JSON.stringify(utente), true);
+    if(type==='staff'){
+      showMsg('Account creato. È in attesa di approvazione della Direzione.','ok');
+      setBtnLoading(btn, false);
+    } else {
+      showMsg('Account creato! Accesso in corso...','ok');
+      setTimeout(()=>loginAs(utente), 700);
+    }
+  }catch(e){ showMsg('Errore di salvataggio, riprova.','err'); setBtnLoading(btn, false); }
+}
+
+async function doLogin(){
+  const btn = event.currentTarget;
+  const nick = document.getElementById('loginNick').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!nick || !pass){ showMsg('Inserisci nick e password.','err'); return; }
+  setBtnLoading(btn, true);
+  const key = 'utenti:'+nick.toLowerCase();
+  try{
+    const res = await window.storage.get(key, true);
+    const utente = JSON.parse(res.value);
+    if(utente.pass !== pass){ showMsg('Password errata.','err'); setBtnLoading(btn, false); return; }
+    if(utente.stato === 'in_attesa'){ showMsg('Il tuo ruolo è ancora in attesa di approvazione.','err'); setBtnLoading(btn, false); return; }
+    if(utente.stato === 'rifiutato'){ showMsg('La richiesta di accesso staff è stata rifiutata.','err'); setBtnLoading(btn, false); return; }
+    loginAs(utente);
+  }catch(e){ showMsg('Nick non trovato. Registrati prima.','err'); setBtnLoading(btn, false); }
+}
+
+function loginAs(utente){
+  currentUser = utente;
+  closeAuth();
+  document.getElementById('landing').classList.add('hidden-app');
+  document.getElementById('app').classList.add('active');
+  buildSidebar();
+  showView('home');
+  refreshHome();
+}
+
+function doLogout(){
+  currentUser = null;
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('landing').classList.remove('hidden-app');
+}
+
+/* ---------------- SIDEBAR / NAV ---------------- */
+function isStaff(){ return currentUser && currentUser.tipo === 'staff'; }
+function isAdmin(){ return currentUser && ADMIN_ROLES.includes(currentUser.ruolo); }
+
+function buildSidebar(){
+  const initials = currentUser.nick.slice(0,2).toUpperCase();
+  document.getElementById('avatarChip').textContent = initials;
+  document.getElementById('userChipName').textContent = currentUser.nick;
+  document.getElementById('userChipRole').textContent = isStaff() ? STAFF_ROLES[currentUser.ruolo] : 'Paziente';
+
+  let links = `<div class="side-link" data-v="home" onclick="showView('home')"><i class="ti ti-home"></i> Home</div>`;
+  if(!isStaff()){
+    links += `<div class="side-link" data-v="prenota" onclick="showView('prenota')"><i class="ti ti-calendar-plus"></i> Prenota visita</div>`;
+    links += `<div class="side-link" data-v="mieprenotazioni" onclick="showView('mieprenotazioni')"><i class="ti ti-list-check"></i> Le mie prenotazioni</div>`;
+  } else {
+    links += `<div class="side-link" data-v="codaPazienti" onclick="showView('codaPazienti')"><i class="ti ti-users"></i> Coda pazienti</div>`;
+    links += `<div class="side-link" data-v="database" onclick="showView('database')"><i class="ti ti-database"></i> Database patologie</div>`;
+    if(isAdmin()){
+      links += `<div class="side-link" data-v="approvazioni" onclick="showView('approvazioni')"><i class="ti ti-shield-check"></i> Approvazioni</div>`;
+    }
+  }
+  document.getElementById('sideLinks').innerHTML = links;
+}
+
+function showView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.side-link').forEach(el=>el.classList.toggle('active', el.dataset.v===v));
+  document.getElementById('view-'+v).classList.add('active');
+  if(v==='home') refreshHome();
+  if(v==='prenota') renderRepartoGrid();
+  if(v==='mieprenotazioni') renderMiePrenotazioni();
+  if(v==='codaPazienti') renderCoda();
+  if(v==='database') renderDatabase();
+  if(v==='approvazioni') renderApprovazioni();
+}
+
+/* ---------------- HOME ---------------- */
+async function refreshHome(){
+  document.getElementById('homeName').textContent = currentUser.nick;
+  document.getElementById('homeSub').textContent = isStaff()
+    ? STAFF_ROLES[currentUser.ruolo] + ' · Ospedale Sant Pelatus, registro clinico'
+    : 'Paziente · cartella personale Ospedale Sant Pelatus';
+
+  const all = await getAllPrenotazioni();
+  if(isStaff()){
+    const mieReparto = currentUser.ruolo==='direzione' ? all : all.filter(p=>true);
+    const inAttesa = mieReparto.filter(p=>p.stato==='in_attesa').length;
+    const confermate = mieReparto.filter(p=>p.stato==='confermata').length;
+    const completate = mieReparto.filter(p=>p.stato==='completata').length;
+    document.getElementById('homeStats').innerHTML = `
+      <div class="stat"><div class="v">${inAttesa}</div><div class="l">In attesa</div></div>
+      <div class="stat"><div class="v">${confermate}</div><div class="l">Confermate</div></div>
+      <div class="stat"><div class="v">${completate}</div><div class="l">Completate</div></div>
+      <div class="stat"><div class="v">${MALATTIE.length}</div><div class="l">Patologie schedate</div></div>`;
+    document.getElementById('homeFeed').innerHTML = isAdmin()
+      ? `<div style="font-size:13.5px;color:var(--bone);opacity:0.8;">Come membro della Direzione puoi approvare nuovo personale dalla sezione <b>Approvazioni</b>.</div>`
+      : `<div style="font-size:13.5px;color:var(--bone);opacity:0.8;">Consulta la <b>Coda pazienti</b> per le richieste in attesa o il <b>Database patologie</b> per i protocolli di cura.</div>`;
+  } else {
+    const mie = all.filter(p=>p.nick.toLowerCase()===currentUser.nick.toLowerCase());
+    const inAttesa = mie.filter(p=>p.stato==='in_attesa').length;
+    const confermate = mie.filter(p=>p.stato==='confermata').length;
+    document.getElementById('homeStats').innerHTML = `
+      <div class="stat"><div class="v">${mie.length}</div><div class="l">Prenotazioni totali</div></div>
+      <div class="stat"><div class="v">${inAttesa}</div><div class="l">In attesa</div></div>
+      <div class="stat"><div class="v">${confermate}</div><div class="l">Confermate</div></div>
+      <div class="stat"><div class="v">${REPARTI.length}</div><div class="l">Reparti disponibili</div></div>`;
+    document.getElementById('homeFeed').innerHTML = `<div style="font-size:13.5px;color:var(--bone);opacity:0.8;">Vai su <b>Prenota visita</b> per inviare una richiesta al pronto soccorso.</div>`;
+  }
+}
+
+/* ---------------- PRENOTAZIONI ---------------- */
+async function getAllPrenotazioni(){
+  try{
+    const idx = await window.storage.get('prenotazioni:index', true);
+    const ids = JSON.parse(idx.value);
+    const out = [];
+    for(const id of ids){
+      try{
+        const r = await window.storage.get('prenotazioni:'+id, true);
+        out.push(JSON.parse(r.value));
+      }catch(e){}
+    }
+    return out.sort((a,b)=>b.creato-a.creato);
+  }catch(e){ return []; }
+}
+
+function renderRepartoGrid(){
+  selectedReparto = null;
+  document.getElementById('repartoGrid').innerHTML = REPARTI.map(r=>
+    `<div class="reparto-card" data-r="${r.id}" onclick="selectReparto('${r.id}')"><i class="ti ${r.icon}"></i><div class="rn">${r.nome}</div></div>`
+  ).join('');
+}
+function selectReparto(id){
+  selectedReparto = id;
+  document.querySelectorAll('.reparto-card').forEach(c=>c.classList.toggle('sel', c.dataset.r===id));
+}
+
+async function creaPrenotazione(){
+  const sintomo = document.getElementById('bookSintomo').value.trim();
+  if(!selectedReparto){ alert('Scegli un reparto.'); return; }
+  if(!sintomo){ alert('Descrivi il sintomo.'); return; }
+  const id = Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  const p = { id, nick: currentUser.nick, reparto: selectedReparto, sintomo, stato:'in_attesa', creato: Date.now() };
+  try{
+    await window.storage.set('prenotazioni:'+id, JSON.stringify(p), true);
+    let ids = [];
+    try{ const idx = await window.storage.get('prenotazioni:index', true); ids = JSON.parse(idx.value); }catch(e){}
+    ids.push(id);
+    await window.storage.set('prenotazioni:index', JSON.stringify(ids), true);
+    document.getElementById('bookSintomo').value='';
+    renderRepartoGrid();
+    showView('mieprenotazioni');
+  }catch(e){ alert('Errore durante l\\'invio. Riprova.'); }
+}
+
+async function renderMiePrenotazioni(){
+  const all = await getAllPrenotazioni();
+  const mie = all.filter(p=>p.nick.toLowerCase()===currentUser.nick.toLowerCase());
+  const cont = document.getElementById('listaMiePrenotazioni');
+  if(mie.length===0){ cont.innerHTML = emptyState('ti-calendar-off','Nessuna prenotazione ancora. Vai su "Prenota visita".'); return; }
+  cont.innerHTML = mie.map(p=>{
+    const rep = REPARTI.find(r=>r.id===p.reparto);
+    return `<div class="booking">
+      <div><div class="bm">${rep?rep.nome:p.reparto}</div><div class="bd">${escapeHtml(p.sintomo)} · ${new Date(p.creato).toLocaleString('it-IT')}</div></div>
+      <span class="status status-${p.stato}">${statoLabel(p.stato)}</span>
+    </div>`;
+  }).join('');
+}
+
+async function renderCoda(){
+  const all = await getAllPrenotazioni();
+  const coda = all.filter(p=>p.stato==='in_attesa' || p.stato==='confermata');
+  const cont = document.getElementById('listaCoda');
+  if(coda.length===0){ cont.innerHTML = emptyState('ti-mood-smile','Nessun paziente in coda al momento.'); return; }
+  cont.innerHTML = coda.map(p=>{
+    const rep = REPARTI.find(r=>r.id===p.reparto);
+    let actions = '';
+    if(p.stato==='in_attesa'){
+      actions = `<button class="btn btn-sm btn-solid" onclick="aggiornaStato('${p.id}','confermata')">Conferma</button>
+                 <button class="btn btn-sm btn-danger" onclick="aggiornaStato('${p.id}','rifiutata')">Rifiuta</button>`;
+    } else {
+      actions = `<button class="btn btn-sm" onclick="aggiornaStato('${p.id}','completata')">Segna completata</button>`;
+    }
+    return `<div class="booking">
+      <div><div class="bm">${p.nick} — ${rep?rep.nome:p.reparto}</div><div class="bd">${escapeHtml(p.sintomo)} · ${new Date(p.creato).toLocaleString('it-IT')}</div></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="status status-${p.stato}">${statoLabel(p.stato)}</span>
+        ${actions}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function aggiornaStato(id, stato){
+  try{
+    const r = await window.storage.get('prenotazioni:'+id, true);
+    const p = JSON.parse(r.value);
+    p.stato = stato;
+    await window.storage.set('prenotazioni:'+id, JSON.stringify(p), true);
+    renderCoda();
+  }catch(e){ alert('Errore aggiornamento.'); }
+}
+
+function statoLabel(s){
+  return {in_attesa:'In attesa', confermata:'Confermata', completata:'Completata', rifiutata:'Rifiutata'}[s] || s;
+}
+function emptyState(icon, text){
+  return `<div class="empty"><i class="ti ${icon}"></i>${text}</div>`;
+}
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+/* ---------------- DATABASE PATOLOGIE ---------------- */
+function renderDatabase(){
+  const q = (document.getElementById('searchMalattia').value||'').toLowerCase();
+  const f = document.getElementById('filterFascia').value;
+  const filtered = MALATTIE.filter(m=>{
+    const matchQ = !q || m.n.toLowerCase().includes(q) || m.sint.toLowerCase().includes(q) || m.cura.toLowerCase().includes(q);
+    const matchF = !f || m.f===f;
+    return matchQ && matchF;
+  });
+  const cont = document.getElementById('databaseList');
+  if(filtered.length===0){ cont.innerHTML = emptyState('ti-search-off','Nessuna patologia trovata.'); return; }
+  cont.innerHTML = filtered.map((m,i)=>`
+    <div class="malattia" id="m${i}">
+      <div class="malattia-head" onclick="toggleMalattia(${i})">
+        <span class="tag tag-${m.f}">${m.f}</span>
+        <span class="mt">${m.n}</span>
+        <i class="ti ti-chevron-right"></i>
+      </div>
+      <div class="malattia-body">
+        <div><b>Sintomi:</b> ${m.sint}</div>
+        <div><b>Parametri:</b> ${m.par}</div>
+        ${m.analisi ? `<div><b>Analisi richiesta:</b> ${m.analisi}</div>` : ''}
+        <div><b>Causa:</b> ${m.causa}</div>
+        <div style="margin-top:8px;"><span class="cura-pill"><i class="ti ti-pill" style="font-size:13px;vertical-align:-1px;"></i> ${m.cura}</span></div>
+      </div>
+    </div>`).join('');
+}
+function toggleMalattia(i){ document.getElementById('m'+i).classList.toggle('open'); }
+
+/* ---------------- APPROVAZIONI ---------------- */
+async function renderApprovazioni(){
+  const cont = document.getElementById('listaApprovazioni');
+  cont.innerHTML = `<div class="empty"><i class="ti ti-loader-2"></i>Caricamento...</div>`;
+  try{
+    const idx = await window.storage.list('utenti:', true);
+    const keys = idx.keys || [];
+    const pending = [];
+    for(const k of keys){
+      try{
+        const r = await window.storage.get(k, true);
+        const u = JSON.parse(r.value);
+        if(u.stato==='in_attesa') pending.push({key:k, u});
+      }catch(e){}
+    }
+    if(pending.length===0){ cont.innerHTML = emptyState('ti-shield-check','Nessuna richiesta in attesa.'); return; }
+    cont.innerHTML = pending.map(p=>`
+      <div class="booking">
+        <div><div class="bm">${p.u.nick}</div><div class="bd">Ruolo richiesto: ${STAFF_ROLES[p.u.ruolo]||p.u.ruolo}</div></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sm btn-solid" onclick="approvaUtente('${p.key}')">Approva</button>
+          <button class="btn btn-sm btn-danger" onclick="rifiutaUtente('${p.key}')">Rifiuta</button>
+        </div>
+      </div>`).join('');
+  }catch(e){ cont.innerHTML = emptyState('ti-alert-triangle','Impossibile caricare le richieste.'); }
+}
+async function approvaUtente(key){
+  try{
+    const r = await window.storage.get(key, true);
+    const u = JSON.parse(r.value);
+    u.stato = 'attivo';
+    await window.storage.set(key, JSON.stringify(u), true);
+    renderApprovazioni();
+  }catch(e){ alert('Errore.'); }
+}
+async function rifiutaUtente(key){
+  try{
+    const r = await window.storage.get(key, true);
+    const u = JSON.parse(r.value);
+    u.stato = 'rifiutato';
+    await window.storage.set(key, JSON.stringify(u), true);
+    renderApprovazioni();
+  }catch(e){ alert('Errore.'); }
+}
+
+/* ---------------- REVEAL ON SCROLL ---------------- */
+const revealObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); revealObserver.unobserve(e.target); } });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal, .reveal-stagger').forEach(el=>revealObserver.observe(el));
+
+</script>
+</body>
+</html>
 
