@@ -57,7 +57,77 @@ h1,h2,h3,.serif{font-family:'Fraunces', serif;}
 @keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
 @keyframes blinkDot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(93,202,165,0.5);}50%{opacity:0.5;box-shadow:0 0 0 5px rgba(93,202,165,0);}}
 
-.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.16,.84,.44,1), transform .7s cubic-bezier(.16,.84,.44,1);}
+/* ---------- preloader ---------- */
+#preloader{
+  position:fixed;inset:0;z-index:300;background:var(--navy-950);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;
+  transition:opacity .5s ease, visibility .5s ease;
+}
+#preloader.gone{opacity:0;visibility:hidden;pointer-events:none;}
+.pre-cross{width:36px;height:36px;position:relative;animation:preBeat 1.1s ease-in-out infinite;}
+.pre-cross::before,.pre-cross::after{content:"";position:absolute;background:var(--teal-300);box-shadow:0 0 18px rgba(93,202,165,0.5);}
+.pre-cross::before{left:15px;top:0;width:6px;height:36px;}
+.pre-cross::after{top:15px;left:0;width:36px;height:6px;}
+@keyframes preBeat{0%,100%{transform:scale(1);}30%{transform:scale(1.15);}45%{transform:scale(0.95);}}
+.pre-label{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--bone);opacity:0.5;}
+
+/* ---------- how-it-works ---------- */
+.steps-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;}
+.steps-row::before{
+  content:"";position:absolute;top:21px;left:8%;right:8%;height:1px;
+  background:repeating-linear-gradient(90deg, rgba(93,202,165,0.35) 0 8px, transparent 8px 16px);
+}
+.step{position:relative;padding-top:0;text-align:left;}
+.step-num{
+  width:42px;height:42px;border-radius:50%;background:var(--navy-900);border:1px solid rgba(93,202,165,0.4);
+  display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:16px;color:var(--teal-300);
+  margin-bottom:18px;position:relative;z-index:1;transition:transform .25s ease, background .25s ease;
+}
+.step:hover .step-num{transform:scale(1.1);background:rgba(93,202,165,0.12);}
+.step h4{margin:0 0 8px;font-size:15px;font-weight:500;}
+.step p{margin:0;font-size:13px;color:var(--bone);opacity:0.7;line-height:1.6;}
+
+/* ---------- reparti showcase ---------- */
+.dept-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.dept-card{
+  border:1px solid rgba(244,241,230,0.1);border-radius:8px;padding:24px;
+  background:linear-gradient(160deg, rgba(93,202,165,0.04), transparent 60%);
+  transition:border-color .25s ease, transform .25s ease;
+}
+.dept-card:hover{border-color:rgba(93,202,165,0.35);transform:translateY(-4px);}
+.dept-icon{width:40px;height:40px;border-radius:8px;background:rgba(93,202,165,0.1);display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
+.dept-icon i{font-size:19px;color:var(--teal-300);}
+.dept-card h4{margin:0 0 8px;font-size:15.5px;font-weight:500;}
+.dept-card p{margin:0;font-size:13px;color:var(--bone);opacity:0.68;line-height:1.6;}
+.dept-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;}
+.dept-tags span{font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(244,241,230,0.06);color:var(--bone);opacity:0.75;}
+
+/* ---------- faq ---------- */
+.faq-item{border-bottom:1px solid rgba(244,241,230,0.1);}
+.faq-q{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  padding:20px 0;cursor:pointer;font-size:15px;font-weight:500;
+}
+.faq-q i{flex-shrink:0;opacity:0.5;transition:transform .25s ease;font-size:16px;}
+.faq-item.open .faq-q i{transform:rotate(45deg);}
+.faq-a{max-height:0;overflow:hidden;opacity:0;transition:max-height .35s cubic-bezier(.16,.84,.44,1), opacity .3s ease, padding .3s ease;font-size:13.5px;color:var(--bone);opacity:0.75;line-height:1.7;}
+.faq-item.open .faq-a{max-height:200px;opacity:0.85;padding-bottom:20px;}
+
+/* ---------- contact band ---------- */
+.contact-band{
+  display:grid;grid-template-columns:1.1fr 1fr;gap:48px;align-items:center;
+  border:1px solid rgba(244,241,230,0.1);border-radius:10px;padding:46px 50px;
+  background:linear-gradient(135deg, rgba(93,202,165,0.06), rgba(194,91,60,0.04));
+  position:relative;overflow:hidden;
+}
+.contact-band::before{
+  content:"";position:absolute;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle, rgba(93,202,165,0.12), transparent 70%);
+  top:-100px;right:-80px;
+}
+.contact-info{display:flex;flex-direction:column;gap:14px;position:relative;}
+.contact-row{display:flex;align-items:center;gap:12px;font-size:13.5px;color:var(--bone);}
+.contact-row i{color:var(--teal-300);font-size:17px;}
 .reveal.in{opacity:1;transform:translateY(0);}
 .reveal-stagger > *{opacity:0;transform:translateY(16px);transition:opacity .55s ease, transform .55s ease;}
 .reveal-stagger.in > *{opacity:1;transform:translateY(0);}
@@ -128,12 +198,15 @@ input,select{font-family:inherit;}
 .hero{
   position:relative;min-height:78vh;display:flex;align-items:center;
   padding:0 5vw;overflow:hidden;
+  --mx:80%; --my:20%;
 }
 .hero-bg{
   position:absolute;inset:0;z-index:0;
   background:
-    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(15,110,86,0.35), transparent 60%),
+    radial-gradient(ellipse 600px 500px at var(--mx) var(--my), rgba(15,110,86,0.22), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(15,110,86,0.25), transparent 60%),
     radial-gradient(ellipse 50% 40% at 10% 80%, rgba(194,91,60,0.18), transparent 60%);
+  transition:background 0.1s linear;
 }
 .hero-bg::after{
   content:"";position:absolute;inset:0;
@@ -349,6 +422,11 @@ footer{padding:40px 5vw;border-top:1px solid rgba(244,241,230,0.08);font-size:12
 </head>
 <body>
 
+<div id="preloader">
+  <div class="pre-cross"></div>
+  <div class="pre-label">Sant Pelatus — apertura cartella</div>
+</div>
+
 <div id="landing">
   <div class="topbar">
     <div class="brand">
@@ -416,6 +494,36 @@ footer{padding:40px 5vw;border-top:1px solid rgba(244,241,230,0.08);font-size:12
     </div>
   </section>
 
+  <section class="section reveal">
+    <div class="section-head">
+      <div class="section-eyebrow">Percorso del paziente</div>
+      <h2>Dalla registrazione alla dimissione</h2>
+      <p>Quattro passaggi separano l'accesso al portale dalla chiusura della cartella clinica.</p>
+    </div>
+    <div class="steps-row reveal-stagger">
+      <div class="step"><div class="step-num">01</div><h4>Registrazione</h4><p>Crei l'account con il tuo nick Minecraft, scegliendo se accedere come paziente o personale.</p></div>
+      <div class="step"><div class="step-num">02</div><h4>Prenotazione</h4><p>Scegli il reparto e descrivi il sintomo: la richiesta entra subito in coda triage.</p></div>
+      <div class="step"><div class="step-num">03</div><h4>Presa in carico</h4><p>Il personale conferma la richiesta e consulta il protocollo di cura adeguato.</p></div>
+      <div class="step"><div class="step-num">04</div><h4>Chiusura visita</h4><p>La pratica viene segnata come completata e resta nello storico del paziente.</p></div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="reparti">
+    <div class="section-head">
+      <div class="section-eyebrow">Reparti attivi</div>
+      <h2>Sei reparti, un solo accesso</h2>
+      <p>Ogni richiesta viene indirizzata al reparto corretto in base al sintomo riportato in fase di prenotazione.</p>
+    </div>
+    <div class="dept-grid reveal-stagger">
+      <div class="dept-card"><div class="dept-icon"><i class="ti ti-stethoscope"></i></div><h4>Medicina generale</h4><p>Prima valutazione, fascia verde e gialla, gestione delle patologie infettive comuni.</p><div class="dept-tags"><span>Influenza</span><span>Mal di testa</span><span>Ipertensione</span></div></div>
+      <div class="dept-card"><div class="dept-icon"><i class="ti ti-cut"></i></div><h4>Chirurgia / Emergenza</h4><p>Fascia rossa: traumi, ferite gravi e interventi che richiedono operazione immediata.</p><div class="dept-tags"><span>Ictus</span><span>Embolia</span><span>Tumori</span></div></div>
+      <div class="dept-card"><div class="dept-icon"><i class="ti ti-pill"></i></div><h4>Farmacia</h4><p>Distribuzione dei farmaci di fascia verde dietro tessera sanitaria e prescrizione.</p><div class="dept-tags"><span>Vasotec</span><span>Brufen</span><span>Monuril</span></div></div>
+      <div class="dept-card"><div class="dept-icon"><i class="ti ti-scan"></i></div><h4>Radiologia / TAC</h4><p>Accertamenti diagnostici per fratture, masse e lesioni interne non visibili.</p><div class="dept-tags"><span>Radiografia</span><span>TAC</span><span>Ecografia</span></div></div>
+      <div class="dept-card"><div class="dept-icon"><i class="ti ti-droplet"></i></div><h4>Dermatologia</h4><p>Patologie cutanee, ustioni, eritemi e infezioni della pelle.</p><div class="dept-tags"><span>Acne</span><span>Eritema</span><span>Candida</span></div></div>
+      <div class="dept-card"><div class="dept-icon"><i class="ti ti-paw"></i></div><h4>Veterinaria</h4><p>Visite e interventi per animali, dalla pratica generale alla chirurgia specialistica.</p><div class="dept-tags"><span>Visite</span><span>Chirurgia</span><span>Esotici</span></div></div>
+    </div>
+  </section>
+
   <section class="section reveal" id="personale">
     <div class="section-head">
       <div class="section-eyebrow">Organico ospedaliero</div>
@@ -427,6 +535,48 @@ footer{padding:40px 5vw;border-top:1px solid rgba(244,241,230,0.08);font-size:12
       <div class="role-pill"><i class="ti ti-heartbeat"></i><div class="rt">Medicina</div><div class="rd">Medico → Specialista → Primario</div></div>
       <div class="role-pill"><i class="ti ti-pill"></i><div class="rt">Farmacia</div><div class="rd">Assistente → Farmacista → Dirigente</div></div>
       <div class="role-pill"><i class="ti ti-paw"></i><div class="rt">Veterinaria</div><div class="rd">Pratico → Chirurgo → Direttore</div></div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <div class="section-head">
+      <div class="section-eyebrow">Domande frequenti</div>
+      <h2>Prima di registrarti</h2>
+    </div>
+    <div id="faqList">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Devo essere staff del server per registrarmi? <i class="ti ti-plus"></i></div>
+        <div class="faq-a">No. Chiunque può registrarsi come paziente con il proprio nick Minecraft e iniziare subito a prenotare visite.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Come ottengo un ruolo da personale sanitario? <i class="ti ti-plus"></i></div>
+        <div class="faq-a">In fase di registrazione scegli "Personale ospedaliero" e il ruolo desiderato. L'account resta in attesa finché la Direzione non lo approva.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Posso cambiare reparto dopo aver prenotato? <i class="ti ti-plus"></i></div>
+        <div class="faq-a">No, ma puoi inviare una nuova richiesta scegliendo il reparto corretto: quella sbagliata verrà comunque gestita o rifiutata dallo staff.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">I miei dati sono visibili ad altri pazienti? <i class="ti ti-plus"></i></div>
+        <div class="faq-a">Le prenotazioni sono visibili allo staff per la gestione della coda. Gli altri pazienti non vedono le tue richieste.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <div class="contact-band">
+      <div>
+        <div class="section-eyebrow">Sede e orari</div>
+        <h2 style="font-size:26px;font-weight:500;margin:0 0 14px;">Sant Pelatus ti aspetta</h2>
+        <p style="color:var(--bone);opacity:0.8;font-size:14.5px;line-height:1.6;margin:0;">Il pronto soccorso resta operativo senza interruzioni. Registrati ora per accedere alla cartella clinica del server.</p>
+        <button class="btn btn-solid" style="margin-top:22px;" onclick="openAuth('register')">Crea il tuo account</button>
+      </div>
+      <div class="contact-info">
+        <div class="contact-row"><i class="ti ti-clock"></i> Triage aperto 24 ore su 24</div>
+        <div class="contact-row"><i class="ti ti-map-pin"></i> Server Minecraft — distretto centrale</div>
+        <div class="contact-row"><i class="ti ti-shield-check"></i> Accesso staff su approvazione Direzione</div>
+        <div class="contact-row"><i class="ti ti-database"></i> 38 patologie protocollate, 6 reparti</div>
+      </div>
     </div>
   </section>
 
@@ -963,7 +1113,57 @@ const revealObserver = new IntersectionObserver((entries)=>{
 }, { threshold: 0.15 });
 document.querySelectorAll('.reveal, .reveal-stagger').forEach(el=>revealObserver.observe(el));
 
+/* ---------------- PRELOADER ---------------- */
+window.addEventListener('load', ()=>{
+  setTimeout(()=>{ document.getElementById('preloader').classList.add('gone'); }, 600);
+});
+
+/* ---------------- CONTATORI ANIMATI ---------------- */
+function animateCounter(el, target, suffix, duration){
+  const start = performance.now();
+  function tick(now){
+    const p = Math.min(1, (now-start)/duration);
+    const eased = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(eased*target) + suffix;
+    if(p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+const vitalsObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      document.querySelectorAll('.vital-num').forEach(el=>{
+        const txt = el.textContent.trim();
+        const m = txt.match(/^(\d+)(.*)$/);
+        if(m){ animateCounter(el, parseInt(m[1]), m[2], 1100); }
+      });
+      vitalsObserver.disconnect();
+    }
+  });
+}, { threshold: 0.5 });
+const vitalsEl = document.querySelector('.vitals-strip');
+if(vitalsEl) vitalsObserver.observe(vitalsEl);
+
+/* ---------------- FAQ ---------------- */
+function toggleFaq(el){
+  const item = el.parentElement;
+  const wasOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i=>i.classList.remove('open'));
+  if(!wasOpen) item.classList.add('open');
+}
+
+/* ---------------- GLOW CURSORE HERO ---------------- */
+const heroEl = document.querySelector('.hero');
+if(heroEl){
+  heroEl.addEventListener('mousemove', (e)=>{
+    const r = heroEl.getBoundingClientRect();
+    const x = ((e.clientX - r.left)/r.width*100).toFixed(1);
+    const y = ((e.clientY - r.top)/r.height*100).toFixed(1);
+    heroEl.style.setProperty('--mx', x+'%');
+    heroEl.style.setProperty('--my', y+'%');
+  });
+}
+
 </script>
 </body>
 </html>
-
