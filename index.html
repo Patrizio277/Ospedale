@@ -507,6 +507,18 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
 .owner-mode .owner-only-inline{display:inline-flex;}
 .owner-only-inline{display:none;}
 
+/* ============ SEZIONE PAZIENTI REGISTRATI ============ */
+.patient-directory-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}
+.patient-directory-head .small-count{font-family:var(--ff-mono);font-size:11px;color:var(--mint-300);}
+.patient-search{width:100%;background:rgba(255,255,255,0.06);color:#fff;border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:13.5px;margin-bottom:10px;}
+.patient-search::placeholder{color:rgba(255,255,255,0.35);}
+.patient-card-pro{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);border-radius:14px;padding:13px;margin-bottom:10px;}
+.patient-card-pro .topline{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+.patient-card-pro .pname{color:#fff;font-weight:800;font-size:13.5px;}
+.patient-card-pro .pcode{font-family:var(--ff-mono);color:var(--mint-300);font-size:12px;white-space:nowrap;}
+.patient-card-pro .pmeta{font-size:11.5px;color:rgba(255,255,255,.48);margin-top:5px;line-height:1.45;}
+.patient-card-pro .pactions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+
 /* ============ RESPONSIVE ============ */
 @media (max-width:980px){
   .hero-inner{grid-template-columns:1fr; gap:50px;}
@@ -1013,7 +1025,11 @@ header.scrolled .nav-profile-role{color:var(--sky-500);}
               </div>
 
               <div class="staff-admin-panel" id="patientCodePanel">
-                <h5>Accessi pazienti</h5>
+                <div class="patient-directory-head">
+                  <h5 style="margin-bottom:0;">Pazienti registrati · Accessi SP</h5>
+                  <span class="small-count" id="patientDirectoryCount">0 pazienti</span>
+                </div>
+                <input class="patient-search" id="patientDirectorySearch" type="text" placeholder="Cerca paziente per nick, nome RP o codice SP..." oninput="renderPatientAccessCodes()">
                 <div class="admin-form">
                   <input id="newPatientAccessName" type="text" placeholder="Nome paziente / nickname Minecraft">
                   <button class="btn btn-mint btn-block" onclick="generatePatientAccessCode()">Crea accesso SP</button>
@@ -1024,7 +1040,7 @@ header.scrolled .nav-profile-role{color:var(--sky-500);}
                   <button class="btn btn-primary btn-block" onclick="staffResetPatientPassword()">Modifica password paziente</button>
                 </div>
                 <div id="patientAccessCodesList" style="margin-top:12px;"></div>
-                <p class="role-order-note">Lo staff può creare un paziente con codice <b>SP-xxxxx</b>. Il paziente usa quel codice come password iniziale e poi può cambiarla.</p>
+                <p class="role-order-note">Questa è la sezione separata per i pazienti: accessi, codici SP e password restano qui, fuori dalle cartelle cliniche, così la dashboard rimane più ordinata.</p>
               </div>
 
               <h5 style="margin-top:24px;">Comunicazioni staff</h5>
@@ -1760,6 +1776,81 @@ window.addEventListener('load', async()=>{
   await renderStaffNotifications(); await renderStaffRequests(false); await renderPatientAccessCodes();
 });
 setInterval(async()=>{ if(currentUser){ await renderStaffRequests(); await renderStaffNotifications(); } if(currentPatient){ await renderPatientRequests(); } }, 5000);
+
+/* ===== MODIFICA: PRATICHE CHIUSE NASCOSTE + SEZIONE PAZIENTI SEPARATA ===== */
+function spIsClosedStatus(status){
+  return ['completata','chiusa','archiviata'].includes(String(status||'').trim().toLowerCase());
+}
+function spActiveOnly(list){
+  return (list||[]).filter(r=>!spIsClosedStatus(r.status));
+}
+
+updateRequestCounters = function(list){
+  const active = spActiveOnly(list);
+  const set=(id,n)=>{const el=document.getElementById(id); if(el) el.textContent=n;};
+  set('countAllRequests', active.length);
+  set('countPrenotazioni', active.filter(r=>r.type==='prenotazione').length);
+  set('countEmergenze', active.filter(r=>r.type==='emergenza').length);
+  set('countChirurgie', active.filter(r=>r.type==='chirurgia').length);
+  set('countTicket', active.filter(r=>r.type==='ticket').length);
+};
+
+renderStaffRequests = async function(runNotify=true){
+  const box=document.getElementById('staffRequests'); if(!box) return;
+  const all=await spFetchRequestsFull();
+  const list=spActiveOnly(all);
+  if(runNotify && currentUser){
+    const codes=list.map(r=>r.code);
+    const fresh=list.filter(r=>!spLastRequestCodes.includes(r.code));
+    if(fresh.length && spLastRequestCodes.length) playStaffSound();
+    spLastRequestCodes=codes; localStorage.setItem('sp_known_request_codes_supabase',JSON.stringify(codes));
+  }
+  updateRequestCounters(list);
+  const filtered=staffRequestFilter==='all'?list:list.filter(r=>r.type===staffRequestFilter);
+  if(!filtered.length){
+    box.innerHTML=`<div class="shift-row"><span class="n">Nessuna cartella clinica attiva in questa sezione</span><span class="t">${esc(staffRequestFilter==='all'?'attive':categoryTitle(staffRequestFilter))}</span></div>`;
+    await renderSurgeryCalendar(); await renderStaffNotifications(); return;
+  }
+  box.innerHTML=filtered.map(r=>`<div class="clinical-card"><div class="clinical-title"><div><h4>${typeIcon(r.type)} Cartella clinica · ${esc(r.character||r.patientNick||'Paziente')}</h4><div class="clinical-meta">${esc(r.code)} · ${esc(categoryTitle(r.type))} · Nick ${esc(r.nick||r.patientNick)}</div></div>${statusBadge(r.status)}</div><div class="clinical-meta">Reparto: ${esc(r.department)} · Creata: ${r.createdAt?esc(new Date(r.createdAt).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})):''}</div><div class="desc">${esc(r.description||'Nessuna descrizione inserita.')}</div><div class="clinical-actions"><button class="mini-btn" onclick="openClinicalRecord('${esc(r.code)}')">Apri cartella</button><button class="mini-btn" onclick="acceptRequest('${esc(r.code)}')">Accetta</button><button class="mini-btn" onclick="completeRequest('${esc(r.code)}')">Chiudi pratica</button></div></div>`).join('');
+  await renderSurgeryCalendar(); await renderStaffNotifications();
+};
+
+completeRequest = async function(code){
+  if(!currentUser){ spAlert('Devi accedere come staff.'); return; }
+  if(!confirm('Chiudere questa pratica? Verrà rimossa dalla lista delle richieste attive.')) return;
+  await spUpdateStatus(code,'Completata');
+  await spdb.from('risposte').insert({
+    codice_richiesta:code,
+    autore_codice:currentUser.code,
+    autore_nome:currentUser.nick,
+    autore_ruolo:currentUser.role,
+    messaggio:'Pratica chiusa dallo staff del Sant Pelatus. Se hai bisogno di ulteriore assistenza, apri una nuova richiesta.'
+  });
+  const detail=document.getElementById('staffClinicalDetail');
+  if(detail) detail.innerHTML='<div class="clinical-detail"><h4>Pratica chiusa</h4><div class="clinical-meta">La richiesta è stata rimossa dalle cartelle cliniche attive.</div></div>';
+  await renderStaffRequests(false);
+  await renderPatientRequests();
+};
+
+renderSurgeryCalendar = async function(){
+  const box=document.getElementById('surgeryCalendar'); if(!box) return;
+  const list=spActiveOnly(await spFetchRequestsFull());
+  const surgeries=list.filter(r=>r.type==='chirurgia'||String(r.department||'').toLowerCase().includes('chirurgia'));
+  if(!surgeries.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessun intervento RP attivo</span><span class="t">live</span></div>'; return; }
+  box.innerHTML=surgeries.slice(0,8).map(r=>`<div class="shift-row" onclick="openClinicalRecord('${esc(r.code)}')" style="cursor:pointer;"><span class="n">${esc(r.character)} — ${esc(typeLabel(r.type))}</span><span class="t">${esc(r.status)}</span></div>`).join('');
+};
+
+renderPatientAccessCodes = async function(){
+  const box=document.getElementById('patientAccessCodesList'); if(!box) return;
+  const patients=await spFetchPatients();
+  const q=String(document.getElementById('patientDirectorySearch')?.value||'').trim().toLowerCase();
+  const filtered=patients.filter(p=>!q || String(p.nick_minecraft||'').toLowerCase().includes(q) || String(p.nome_rp||'').toLowerCase().includes(q) || String(p.codice_paziente||'').toLowerCase().includes(q));
+  const count=document.getElementById('patientDirectoryCount'); if(count) count.textContent=patients.length+' pazienti';
+  if(!patients.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessun paziente registrato</span><span class="t">SP</span></div>'; return; }
+  if(!filtered.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessun paziente trovato</span><span class="t">cerca</span></div>'; return; }
+  box.innerHTML=filtered.slice(0,30).map(p=>`<div class="patient-card-pro"><div class="topline"><div><div class="pname">${esc(p.nome_rp||p.nick_minecraft)}</div><div class="pmeta">Nick Minecraft: ${esc(p.nick_minecraft)}<br>Registrato: ${p.data_registrazione?esc(new Date(p.data_registrazione).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})):'—'} · Stato: ${esc(p.stato||'Attivo')}</div></div><div class="pcode">${esc(p.codice_paziente)}</div></div><div class="pmeta">Password attuale: ${canManageStaff()?esc(p.password||p.codice_paziente):'nascosta'}</div><div class="pactions"><button class="mini-btn" onclick="document.getElementById('resetPatientNick').value='${esc(p.nick_minecraft)}'; document.getElementById('resetPatientPassword').focus();">Modifica password</button></div></div>`).join('');
+};
+
 </script>
 
 </body>
