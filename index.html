@@ -553,6 +553,25 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
 .staff-request-card .code{font-family:var(--ff-mono);font-size:11px;color:var(--mint-300);}
 .auth-note{font-size:12.5px;color:#6d82a0;margin-top:10px;}
 
+
+/* ============ PROFILO NAV + CODICI PAZIENTE ============ */
+.nav-profile{display:none;align-items:center;gap:10px;padding:6px 12px 6px 7px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.24);color:#fff;backdrop-filter:blur(8px);}
+header.scrolled .nav-profile{background:#fff;color:var(--navy-950);border-color:var(--line);box-shadow:var(--shadow-sm);}
+.nav-profile.show{display:flex;}
+.mc-head{width:34px;height:34px;border-radius:11px;object-fit:cover;image-rendering:auto;background:linear-gradient(145deg,var(--sky-500),var(--mint-500));box-shadow:0 6px 16px rgba(0,0,0,.18);}
+.nav-profile-meta{line-height:1.05;}
+.nav-profile-name{font-weight:800;font-size:13.5px;}
+.nav-profile-role{font-family:var(--ff-mono);font-size:10px;color:var(--mint-300);text-transform:uppercase;letter-spacing:.05em;margin-top:3px;}
+header.scrolled .nav-profile-role{color:var(--sky-500);}
+.nav-cta.logged .staff-access-btn{display:none;}
+.code-card{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);border-radius:12px;padding:12px;margin-bottom:10px;}
+.code-card .code-main{display:flex;justify-content:space-between;gap:10px;align-items:center;}
+.code-card .patient-name{color:#fff;font-size:13.5px;font-weight:700;}
+.code-card .patient-code{font-family:var(--ff-mono);font-size:12px;color:var(--mint-300);}
+.code-card .code-meta{font-size:11.5px;color:rgba(255,255,255,.45);margin-top:6px;}
+.code-card.used{opacity:.64;}
+.role-order-note{font-size:12px;color:rgba(255,255,255,.46);margin-top:8px;line-height:1.45;}
+
 </style>
 </head>
 <body>
@@ -581,7 +600,11 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
       <a href="#contatti">Contatti</a>
     </nav>
     <div class="nav-cta">
-      <a href="#aree" class="btn btn-ghost btn-sm" onclick="goToArea('staff')">Accedi Staff</a>
+      <a href="#aree" class="btn btn-ghost btn-sm staff-access-btn" onclick="goToArea('staff')">Accedi Staff</a>
+      <div class="nav-profile" id="navProfile" onclick="goToArea(currentUser?'staff':'pazienti')">
+        <img class="mc-head" id="navProfileHead" alt="Testa Minecraft" src="https://mc-heads.net/avatar/Steve/64">
+        <div class="nav-profile-meta"><div class="nav-profile-name" id="navProfileName">Profilo</div><div class="nav-profile-role" id="navProfileRole">Online</div></div>
+      </div>
       <a href="#aree" class="btn btn-primary btn-sm" onclick="goToArea('pazienti')">Prenota Visita</a>
       <div class="burger" id="burgerBtn"><span></span></div>
     </div>
@@ -723,16 +746,16 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
         <div class="card-panel reveal">
           <div id="patientLoginView" class="auth-card" style="padding:0; box-shadow:none; border:none; margin:0;">
             <h3 style="margin-bottom:8px; font-size:20px;">Accesso Area Pazienti</h3>
-            <p style="color:#5a7191; font-size:14.5px; margin-bottom:18px;">Accedi prima di prenotare visite, emergenze, chirurgie o ticket. Dopo l'invio potrai vedere le risposte dei medici.</p>
+            <p style="color:#5a7191; font-size:14.5px; margin-bottom:18px;">Accedi con il codice personale creato dallo staff. Dopo l'invio potrai vedere risposte, stato e messaggi dei medici.</p>
             <div class="row2">
               <div class="field"><label>Nickname Minecraft</label><input id="patientNickLogin" type="text" placeholder="Es. ziofede82"></div>
-              <div class="field"><label>Codice personale</label><input id="patientCodeLogin" type="password" placeholder="Scegli o inserisci un codice"></div>
+              <div class="field"><label>Codice personale ricevuto dallo staff</label><input id="patientCodeLogin" type="password" placeholder="Es. SP-ACCESS-123456"></div>
             </div>
             <div class="auth-actions">
               <button class="btn btn-mint" onclick="patientLogin()">Accedi paziente →</button>
-              <button class="btn btn-outline" onclick="patientRegister()">Crea accesso paziente</button>
+              <button class="btn btn-outline" onclick="showPatientCodeInfo()">Come ottengo il codice?</button>
             </div>
-            <p class="auth-note">Il codice serve per rientrare e controllare le risposte. Demo compatibile con GitHub Pages.</p>
+            <p class="auth-note">Il codice viene generato da un membro staff dal pannello medico. Demo compatibile con GitHub Pages.</p>
           </div>
 
           <div id="patientAreaView" style="display:none;">
@@ -911,15 +934,25 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
                   <input id="newStaffCode" type="text" placeholder="Codice login">
                   <select id="newStaffRole">
                     <option>Infermiere</option>
-                    <option>Dottore</option>
                     <option>Medico</option>
                     <option>Chirurgo</option>
-                    <option>Primario</option>
+                    <option>Dottore</option>
                     <option>Direttore sanitario</option>
+                    <option>Primario</option>
                   </select>
                   <button class="btn btn-mint btn-block" onclick="addStaffUser()">Aggiungi / aggiorna</button>
                 </div>
                 <p style="color:rgba(255,255,255,0.45); font-size:12px;">Solo ziofede82 vede questo pannello.</p>
+              </div>
+
+              <div class="staff-admin-panel" id="patientCodePanel">
+                <h5>Codici personali pazienti</h5>
+                <div class="admin-form">
+                  <input id="newPatientAccessName" type="text" placeholder="Nome paziente / nickname Minecraft">
+                  <button class="btn btn-mint btn-block" onclick="generatePatientAccessCode()">Genera codice personale</button>
+                </div>
+                <div id="patientAccessCodesList" style="margin-top:12px;"></div>
+                <p class="role-order-note">Lo staff chiede il nome al paziente, genera il codice e glielo consegna. Il paziente userà quel codice per accedere all'area pazienti.</p>
               </div>
 
               <h5 style="margin-top:24px;">Comunicazioni staff</h5>
@@ -1002,12 +1035,14 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
 const DB_KEY = 'santPelatusRequestsV3';
 const USERS_KEY = 'santPelatusStaffUsersV3';
 const PATIENTS_KEY = 'santPelatusPatientsV1';
+const ACCESS_CODES_KEY = 'santPelatusPatientAccessCodesV1';
 const DEFAULT_STAFF_CODE = 'SANTPELATUS2026';
 const OWNER_NICK = 'ziofede82';
 const OWNER_CODE = 'CAPO82';
 let selectedType = null;
 let currentUser = null;
 let currentPatient = null;
+const STAFF_ROLES = ['Infermiere','Medico','Chirurgo','Dottore','Direttore sanitario','Primario'];
 
 function esc(str=''){ return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function normalizeNick(nick){ return String(nick||'').trim().toLowerCase(); }
@@ -1016,6 +1051,8 @@ function getRequests(){ try { return JSON.parse(localStorage.getItem(DB_KEY)) ||
 function saveRequests(list){ localStorage.setItem(DB_KEY, JSON.stringify(list)); }
 function getPatients(){ try { return JSON.parse(localStorage.getItem(PATIENTS_KEY)) || []; } catch(e){ return []; } }
 function savePatients(list){ localStorage.setItem(PATIENTS_KEY, JSON.stringify(list)); }
+function getAccessCodes(){ try { return JSON.parse(localStorage.getItem(ACCESS_CODES_KEY)) || []; } catch(e){ return []; } }
+function saveAccessCodes(list){ localStorage.setItem(ACCESS_CODES_KEY, JSON.stringify(list)); }
 function defaultUsers(){ return [
   {nick: OWNER_NICK, code: OWNER_CODE, role:'Capo ospedale', owner:true},
   {nick:'Dr_Reyes', code: DEFAULT_STAFF_CODE, role:'Chirurgo', owner:false},
@@ -1037,7 +1074,7 @@ function statusBadge(status){ const cls = status === 'Completata' ? 'green' : st
 /* ===== LOADER ===== */
 window.addEventListener('load', () => {
   setTimeout(() => document.getElementById('loader').classList.add('hidden'), 900);
-  getUsers(); renderStaffRequests(); renderStaffUsers(); renderPatientRequests();
+  getUsers(); renderStaffRequests(); renderStaffUsers(); renderPatientRequests(); renderPatientAccessCodes(); updateNavProfile();
 });
 
 /* ===== NAVBAR SCROLL ===== */
@@ -1071,32 +1108,43 @@ function goToArea(area){
 }
 
 /* ===== LOGIN PAZIENTI ===== */
+function showPatientCodeInfo(){
+  alert('Per entrare nell’Area Pazienti devi chiedere a uno staff medico di generarti un codice personale. Lo staff clicca “Genera codice personale”, inserisce il tuo nome e ti passa il codice.');
+}
 function patientRegister(){
-  const nick = document.getElementById('patientNickLogin').value.trim();
-  const code = document.getElementById('patientCodeLogin').value.trim();
-  if(!nick || !code){ alert('Inserisci nickname Minecraft e codice personale.'); return; }
-  const patients = getPatients();
-  if(patients.some(p => normalizeNick(p.nick) === normalizeNick(nick))){ alert('Questo paziente esiste già: usa Accedi paziente.'); return; }
-  const patient = {nick, code, createdAt:new Date().toISOString()};
-  patients.push(patient); savePatients(patients); currentPatient = patient; openPatientArea();
+  // Tenuta per compatibilità con vecchie versioni, ma ora l’accesso paziente avviene tramite codice staff.
+  showPatientCodeInfo();
 }
 function patientLogin(){
   const nick = document.getElementById('patientNickLogin').value.trim();
-  const code = document.getElementById('patientCodeLogin').value.trim();
-  const patient = getPatients().find(p => normalizeNick(p.nick) === normalizeNick(nick) && p.code === code);
-  if(!patient){ alert('Accesso paziente non valido. Se è la prima volta, clicca “Crea accesso paziente”.'); return; }
-  currentPatient = patient; openPatientArea();
+  const code = document.getElementById('patientCodeLogin').value.trim().toUpperCase();
+  if(!nick || !code){ alert('Inserisci nickname Minecraft e codice personale ricevuto dallo staff.'); return; }
+  const codes = getAccessCodes();
+  const access = codes.find(c => c.code === code && (!c.usedBy || normalizeNick(c.usedBy) === normalizeNick(nick)) && normalizeNick(c.patientName) === normalizeNick(nick));
+  if(!access){ alert('Codice paziente non valido. Chiedi allo staff di generare un codice personale con il tuo nome esatto.'); return; }
+  let patients = getPatients();
+  let patient = patients.find(p => normalizeNick(p.nick) === normalizeNick(nick));
+  if(!patient){
+    patient = {nick, code, createdAt:new Date().toISOString(), accessCode:code};
+    patients.push(patient);
+  } else {
+    patient = {...patient, code, accessCode:code};
+    patients = patients.map(p => normalizeNick(p.nick) === normalizeNick(nick) ? patient : p);
+  }
+  savePatients(patients);
+  saveAccessCodes(codes.map(c => c.code === code ? {...c, usedBy:nick, usedAt:new Date().toISOString()} : c));
+  currentPatient = patient; openPatientArea(); renderPatientAccessCodes();
 }
 function openPatientArea(){
   document.getElementById('patientLoginView').style.display = 'none';
   document.getElementById('patientAreaView').style.display = 'block';
   document.getElementById('patientWelcome').textContent = 'Benvenuto, ' + currentPatient.nick;
   document.getElementById('mcNick').value = currentPatient.nick;
+  updateNavProfile();
   renderPatientRequests();
 }
-function patientLogout(){ currentPatient = null; document.getElementById('patientAreaView').style.display='none'; document.getElementById('patientLoginView').style.display='block'; }
+function patientLogout(){ currentPatient = null; document.getElementById('patientAreaView').style.display='none'; document.getElementById('patientLoginView').style.display='block'; updateNavProfile(); }
 
-/* ===== FORM PAZIENTE FUNZIONANTE ===== */
 function selectOption(val){ document.querySelectorAll('.option-card').forEach(c => c.classList.toggle('selected', c.dataset.val===val)); selectedType = val; document.getElementById('next1').disabled = false; }
 function goStep(step){
   if(!currentPatient){ alert('Devi prima accedere come paziente.'); return; }
@@ -1140,13 +1188,13 @@ function staffLogin(){
   const nickInput=document.getElementById('staffNick').value.trim(); const code=document.getElementById('staffCode').value.trim();
   const user=getUsers().find(u=>normalizeNick(u.nick)===normalizeNick(nickInput) && u.code===code);
   if(!user){ alert('Login non valido. Capo: ziofede82 / CAPO82. Staff demo: Dr_Reyes / SANTPELATUS2026'); return; }
-  currentUser=user; document.querySelector('.who-name').textContent=user.nick; document.getElementById('currentRoleLabel').textContent=user.owner?'Capo ospedale · Gestione ruoli':`${user.role} · Staff Sant Pelatus`; document.querySelector('.avatar').textContent=user.nick.slice(0,2).toUpperCase();
-  document.getElementById('staffLoginView').style.display='none'; document.getElementById('staffDashView').style.display='block'; document.getElementById('staffDashView').classList.toggle('owner-mode', !!user.owner); renderStaffRequests(); renderStaffUsers();
+  currentUser=user; document.querySelector('.who-name').textContent=user.nick; document.getElementById('currentRoleLabel').textContent=user.owner?'Capo ospedale · Gestione ruoli':`${user.role} · Staff Sant Pelatus`; document.querySelector('.avatar').innerHTML=`<img class="mc-head" src="${minecraftHead(user.nick)}" alt="Skin ${esc(user.nick)}">`;
+  document.getElementById('staffLoginView').style.display='none'; document.getElementById('staffDashView').style.display='block'; document.getElementById('staffDashView').classList.toggle('owner-mode', !!user.owner); updateNavProfile(); renderStaffRequests(); renderStaffUsers(); renderPatientAccessCodes();
 }
-function staffLogout(){ currentUser=null; document.getElementById('staffDashView').classList.remove('owner-mode'); document.getElementById('staffDashView').style.display='none'; document.getElementById('staffLoginView').style.display='block'; }
+function staffLogout(){ currentUser=null; document.getElementById('staffDashView').classList.remove('owner-mode'); document.getElementById('staffDashView').style.display='none'; document.getElementById('staffLoginView').style.display='block'; updateNavProfile(); }
 function renderStaffUsers(){
   const box=document.getElementById('staffUsersList'); if(!box) return; const users=getUsers();
-  box.innerHTML=users.map(u=>`<div class="staff-user-card"><div class="meta"><div class="name">${esc(u.nick)} ${u.owner?'<span class="role-pill">CAPO</span>':''}</div><div class="role">${esc(u.role)} · codice: ${canManageStaff()?esc(u.code):'nascosto'}</div></div><div class="staff-user-actions">${canManageStaff()&&!u.owner?`<select class="status-select" onchange="changeStaffRole('${esc(u.nick)}', this.value)">${['Infermiere','Dottore','Medico','Chirurgo','Primario','Direttore sanitario'].map(r=>`<option ${u.role===r?'selected':''}>${r}</option>`).join('')}</select><button class="mini-btn" onclick="removeStaffUser('${esc(u.nick)}')">Rimuovi</button>`:''}</div></div>`).join('');
+  box.innerHTML=users.map(u=>`<div class="staff-user-card"><div class="meta"><div class="name">${esc(u.nick)} ${u.owner?'<span class="role-pill">CAPO</span>':''}</div><div class="role">${esc(u.role)} · codice: ${canManageStaff()?esc(u.code):'nascosto'}</div></div><div class="staff-user-actions">${canManageStaff()&&!u.owner?`<select class="status-select" onchange="changeStaffRole('${esc(u.nick)}', this.value)">${STAFF_ROLES.map(r=>`<option ${u.role===r?'selected':''}>${r}</option>`).join('')}</select><button class="mini-btn" onclick="removeStaffUser('${esc(u.nick)}')">Rimuovi</button>`:''}</div></div>`).join('');
 }
 function addStaffUser(){ if(!canManageStaff()){ alert('Solo ziofede82 può gestire i ruoli.'); return; } const nick=document.getElementById('newStaffNick').value.trim(), code=document.getElementById('newStaffCode').value.trim(), role=document.getElementById('newStaffRole').value; if(!nick||!code){ alert('Inserisci nickname e codice login.'); return; } if(normalizeNick(nick)===OWNER_NICK){ alert('Il capo ziofede82 esiste già e non si modifica.'); return; } let users=getUsers().filter(u=>normalizeNick(u.nick)!==normalizeNick(nick)); users.push({nick, code, role, owner:false}); saveUsers(users); document.getElementById('newStaffNick').value=''; document.getElementById('newStaffCode').value=''; renderStaffUsers(); }
 function changeStaffRole(nick, role){ if(!canManageStaff()) return; saveUsers(getUsers().map(u=>normalizeNick(u.nick)===normalizeNick(nick)&&!u.owner?{...u,role}:u)); renderStaffUsers(); }
@@ -1164,6 +1212,45 @@ function sendStaffReply(code){
   if(!text){ alert('Scrivi una risposta prima di inviare.'); return; }
   const list=getRequests().map(r=>r.code===code?{...r,status:r.status==='In attesa'?'In cura':r.status,messages:[...(r.messages||[]),{by:currentUser.nick,role:currentUser.role,text,at:nowIT()}]}:r);
   saveRequests(list); renderStaffRequests(); renderPatientRequests();
+}
+function minecraftHead(nick){ return 'https://mc-heads.net/avatar/' + encodeURIComponent(nick || 'Steve') + '/64'; }
+function updateNavProfile(){
+  const navCta = document.querySelector('.nav-cta');
+  const profile = document.getElementById('navProfile');
+  const head = document.getElementById('navProfileHead');
+  const name = document.getElementById('navProfileName');
+  const role = document.getElementById('navProfileRole');
+  const active = currentUser || currentPatient;
+  if(!profile || !navCta) return;
+  navCta.classList.toggle('logged', !!active);
+  profile.classList.toggle('show', !!active);
+  if(active){
+    const nick = active.nick;
+    head.src = minecraftHead(nick);
+    name.textContent = nick;
+    role.textContent = currentUser ? (currentUser.owner ? 'Capo' : currentUser.role) : 'Paziente';
+  }
+}
+function makePatientCode(){ return 'SP-ACCESS-' + Math.floor(100000 + Math.random()*900000); }
+function generatePatientAccessCode(){
+  if(!currentUser){ alert('Devi accedere come staff.'); return; }
+  const input = document.getElementById('newPatientAccessName');
+  const patientName = input.value.trim();
+  if(!patientName){ alert('Inserisci il nome paziente / nickname Minecraft.'); input.focus(); return; }
+  const codes = getAccessCodes();
+  let code;
+  do { code = makePatientCode(); } while(codes.some(c => c.code === code));
+  codes.unshift({code, patientName, createdBy:currentUser.nick, createdRole:currentUser.role, createdAt:new Date().toISOString(), usedBy:null});
+  saveAccessCodes(codes);
+  input.value = '';
+  renderPatientAccessCodes();
+  alert('Codice creato per ' + patientName + ': ' + code + '\nPassalo al paziente per farlo accedere.');
+}
+function renderPatientAccessCodes(){
+  const box=document.getElementById('patientAccessCodesList'); if(!box) return;
+  const codes=getAccessCodes();
+  if(!codes.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessun codice paziente creato</span><span class="t">staff</span></div>'; return; }
+  box.innerHTML=codes.slice(0,12).map(c=>`<div class="code-card ${c.usedBy?'used':''}"><div class="code-main"><div><div class="patient-name">${esc(c.patientName)}</div><div class="code-meta">Creato da ${esc(c.createdBy)} · ${esc(new Date(c.createdAt).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'}))}</div></div><div class="patient-code">${esc(c.code)}</div></div><div class="code-meta">${c.usedBy?'Usato da '+esc(c.usedBy):'Non ancora usato'}</div></div>`).join('');
 }
 function triggerEmergency(){ const toast=document.getElementById('emergencyToast'); toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),3800); }
 document.getElementById('burgerBtn').addEventListener('click', () => { document.getElementById('aree').scrollIntoView({behavior:'smooth'}); });
