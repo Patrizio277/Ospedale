@@ -877,9 +877,14 @@ header.scrolled .nav-profile-role{color:var(--sky-500);}
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#34d9a8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <h3 style="font-size:19px;">Richiesta inviata!</h3>
-            <p style="color:#5a7191; margin-top:8px; font-size:14.5px;">Presentati in game al banco accettazione del Sant Pelatus con questo codice.</p>
+            <p style="color:#5a7191; margin-top:8px; font-size:14.5px;">Questo è il codice pratica: conservalo. Puoi usarlo per controllare stato e risposte dello staff.</p>
             <div class="ticket-code" id="ticketCode">SP-RP-0000</div>
-            <div style="margin-top:24px;"><button class="btn btn-outline btn-sm" onclick="resetForm()">Nuova richiesta</button></div>
+            <p id="patientCodeAfterSubmit" style="color:#5a7191; margin-top:10px; font-size:13px; font-family:var(--ff-mono);">Codice paziente: SP-00000</p>
+            <div style="margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+              <button class="btn btn-dark btn-sm" onclick="copyTicketCode()">Copia codice pratica</button>
+              <button class="btn btn-outline btn-sm" onclick="lookupTicket()">Vedi subito stato</button>
+              <button class="btn btn-outline btn-sm" onclick="resetForm()">Nuova richiesta</button>
+            </div>
           </div>
 
           <div style="margin-top:26px; padding-top:22px; border-top:1px solid var(--line);">
@@ -1103,6 +1108,7 @@ const DB_KEY = 'santPelatusRequestsV3';
 const USERS_KEY = 'santPelatusStaffUsersV3';
 const PATIENTS_KEY = 'santPelatusPatientsV1';
 const ACCESS_CODES_KEY = 'santPelatusPatientAccessCodesV1';
+const STAFF_NOTIFICATIONS_KEY = 'santPelatusStaffNotificationsV1';
 const OWNER_NICK = 'ziofede82';
 const OWNER_CODE = 'CAPO82';
 let selectedType = null;
@@ -1122,6 +1128,19 @@ function getPatients(){ try { return JSON.parse(localStorage.getItem(PATIENTS_KE
 function savePatients(list){ localStorage.setItem(PATIENTS_KEY, JSON.stringify(list)); }
 function getAccessCodes(){ try { return JSON.parse(localStorage.getItem(ACCESS_CODES_KEY)) || []; } catch(e){ return []; } }
 function saveAccessCodes(list){ localStorage.setItem(ACCESS_CODES_KEY, JSON.stringify(list)); }
+function getStaffNotifications(){ try { return JSON.parse(localStorage.getItem(STAFF_NOTIFICATIONS_KEY)) || []; } catch(e){ return []; } }
+function saveStaffNotifications(list){ localStorage.setItem(STAFF_NOTIFICATIONS_KEY, JSON.stringify(list.slice(0,50))); }
+function addStaffNotification(req, isTest=false){
+  const notice={id:'N-'+Date.now()+'-'+Math.floor(Math.random()*9999), code:req.code, type:req.type, nick:req.nick||req.patientNick||'Paziente', text:(isTest?'Test notifica: ':'') + typeIcon(req.type) + ' ' + (req.nick||req.patientNick||'Un paziente') + ' ha fatto: ' + categoryTitle(req.type), time:nowIT(), createdAt:new Date().toISOString(), urgent:req.type==='emergenza'};
+  const list=getStaffNotifications().filter(n=>!(n.code===notice.code && !isTest));
+  list.unshift(notice); saveStaffNotifications(list); return notice;
+}
+function renderStaffNotifications(){
+  const box=document.getElementById('staffNotifications'); if(!box) return;
+  const list=getStaffNotifications();
+  if(!list.length){ box.innerHTML='<div class="notice-item"><span class="notice-dot"></span><div><div class="notice-text">Nessuna nuova notifica.</div><div class="notice-time">live</div></div></div>'; return; }
+  box.innerHTML=list.slice(0,12).map(n=>`<div class="notice-item ${n.urgent?'urgent':''}"><span class="notice-dot"></span><div><div class="notice-text">${esc(n.text)}</div><div class="notice-time">${esc(n.time)}${n.code && !String(n.code).startsWith('TEST') ? ` · <button class="mini-btn" style="margin-left:6px;" onclick="openClinicalRecord('${esc(n.code)}')">Apri</button>` : ''}</div></div></div>`).join('');
+}
 function randomDigits(len=5){ return Array.from({length:len}, () => Math.floor(Math.random()*10)).join(''); }
 function makeUniqueCode(prefix, existingCodes=[]){ let code; do { code = prefix + '-' + randomDigits(5); } while(existingCodes.includes(code)); return code; }
 function defaultUsers(){ return [
@@ -1142,7 +1161,7 @@ function statusBadge(status){ const cls = status === 'Completata' ? 'green' : st
 /* ===== LOADER ===== */
 window.addEventListener('load', () => {
   setTimeout(() => document.getElementById('loader').classList.add('hidden'), 900);
-  getUsers(); renderStaffRequests(); renderStaffUsers(); renderPatientRequests(); renderPatientAccessCodes(); updateNavProfile();
+  getUsers(); renderStaffNotifications(); renderStaffRequests(); renderStaffUsers(); renderPatientRequests(); renderPatientAccessCodes(); updateNavProfile();
 });
 
 /* ===== NAVBAR SCROLL ===== */
@@ -1268,10 +1287,22 @@ function submitBooking(){
   const code = 'SP-RP-' + Math.floor(1000 + Math.random()*9000);
   const req = { code, patientNick: currentPatient.nick, type:selectedType, character:document.getElementById('charName').value.trim(), nick:document.getElementById('mcNick').value.trim(), department:document.getElementById('department').value, description:document.getElementById('description').value.trim(), status:selectedType==='emergenza'?'Urgente':'In attesa', createdAt:new Date().toISOString(), messages:[{by:'Sistema Sant Pelatus', role:'Sistema', text:'Richiesta ricevuta. Lo staff medico risponderà appena possibile.', at:nowIT()}] };
   const list=getRequests(); list.unshift(req); saveRequests(list);
-  document.getElementById('bookingForm').style.display='none'; document.getElementById('formSuccess').classList.add('active'); document.getElementById('ticketCode').textContent=code; document.getElementById('lookupCode').value=code;
-  renderStaffRequests(); renderPatientRequests();
+  const createdNotice = addStaffNotification(req, false);
+  document.getElementById('bookingForm').style.display='none';
+  document.getElementById('formSuccess').classList.add('active');
+  document.getElementById('ticketCode').textContent=code;
+  document.getElementById('lookupCode').value=code;
+  const patientCodeEl=document.getElementById('patientCodeAfterSubmit'); if(patientCodeEl) patientCodeEl.textContent='Codice paziente: '+(currentPatient.code||'SP-00000');
+  renderStaffNotifications(); renderStaffRequests(false); renderPatientRequests(); lookupTicket();
+  // Salva anche la notifica nello storico staff, così non sparisce dopo refresh.
 }
 function resetForm(){ document.getElementById('bookingForm').reset(); if(currentPatient) document.getElementById('mcNick').value=currentPatient.nick; document.getElementById('bookingForm').style.display='block'; document.getElementById('formSuccess').classList.remove('active'); selectedType=null; document.querySelectorAll('.option-card').forEach(c=>c.classList.remove('selected')); document.getElementById('next1').disabled=true; goStep(1); }
+function copyTicketCode(){
+  const code=(document.getElementById('ticketCode')?.textContent || document.getElementById('lookupCode')?.value || '').trim();
+  if(!code){ alert('Nessun codice pratica da copiare.'); return; }
+  if(navigator.clipboard){ navigator.clipboard.writeText(code).then(()=>alert('Codice pratica copiato: '+code)).catch(()=>alert('Codice pratica: '+code)); }
+  else alert('Codice pratica: '+code);
+}
 function lookupTicket(){
   const code=document.getElementById('lookupCode').value.trim().toUpperCase();
   const req=getRequests().find(r=>r.code.toUpperCase()===code);
@@ -1305,7 +1336,7 @@ function staffLogin(){
   const user=getUsers().find(u=>normalizeNick(u.nick)===normalizeNick(nickInput) && ((u.password||u.code)===code || u.code===code));
   if(!user){ alert('Login non valido. Capo: ziofede82 / CAPO82. Gli staff entrano con codice SPS-xxxxx creato dal capo.'); return; }
   currentUser=user; document.querySelector('.who-name').textContent=user.nick; document.getElementById('currentRoleLabel').textContent=user.owner?'Capo ospedale · Gestione ruoli':`${user.role} · Staff Sant Pelatus`; document.querySelector('.avatar').innerHTML=`<img class="mc-head" src="${minecraftHead(user.nick)}" alt="Skin ${esc(user.nick)}">`;
-  document.getElementById('staffLoginView').style.display='none'; document.getElementById('staffDashView').style.display='block'; document.getElementById('staffDashView').classList.toggle('owner-mode', !!user.owner); const soundToggle=document.getElementById('staffSoundToggle'); if(soundToggle) soundToggle.checked=staffSoundEnabled; updateNavProfile(); renderStaffRequests(); renderStaffUsers(); renderPatientAccessCodes(); renderSurgeryCalendar();
+  document.getElementById('staffLoginView').style.display='none'; document.getElementById('staffDashView').style.display='block'; document.getElementById('staffDashView').classList.toggle('owner-mode', !!user.owner); const soundToggle=document.getElementById('staffSoundToggle'); if(soundToggle) soundToggle.checked=staffSoundEnabled; updateNavProfile(); renderStaffNotifications(); renderStaffRequests(); renderStaffUsers(); renderPatientAccessCodes(); renderSurgeryCalendar();
 }
 function staffLogout(){ currentUser=null; document.getElementById('staffDashView').classList.remove('owner-mode'); document.getElementById('staffDashView').style.display='none'; document.getElementById('staffLoginView').style.display='block'; updateNavProfile(); }
 function renderStaffUsers(){
@@ -1346,11 +1377,8 @@ function playStaffSound(){
   }catch(e){}
 }
 function pushStaffNotification(req, isTest=false){
-  const box=document.getElementById('staffNotifications'); if(!box) return;
-  const item=document.createElement('div'); item.className='notice-item '+(req.type==='emergenza'?'urgent':'');
-  item.innerHTML=`<span class="notice-dot"></span><div><div class="notice-text">${isTest?'Test notifica: ':''}${typeIcon(req.type)} ${esc(req.nick||req.patientNick||'Un paziente')} ha fatto: ${esc(categoryTitle(req.type))}</div><div class="notice-time">${nowIT()} · <button class="mini-btn" style="margin-left:6px;" onclick="openClinicalRecord('${esc(req.code)}')">Apri</button></div></div>`;
-  if(box.querySelector('.notice-text') && box.textContent.includes('Nessuna nuova notifica')) box.innerHTML='';
-  box.prepend(item); while(box.children.length>6) box.removeChild(box.lastChild);
+  addStaffNotification(req, isTest);
+  renderStaffNotifications();
   playStaffSound();
 }
 function checkNewStaffRequests(){
@@ -1358,7 +1386,7 @@ function checkNewStaffRequests(){
   if(fresh.length && currentUser){ fresh.reverse().forEach(r=>pushStaffNotification(r)); }
   knownRequestCodes=codes; localStorage.setItem('sp_known_request_codes', JSON.stringify(knownRequestCodes));
 }
-function clearStaffNotifications(){ const box=document.getElementById('staffNotifications'); if(box) box.innerHTML='<div class="notice-item"><span class="notice-dot"></span><div><div class="notice-text">Notifiche pulite.</div><div class="notice-time">'+nowIT()+'</div></div></div>'; }
+function clearStaffNotifications(){ saveStaffNotifications([]); renderStaffNotifications(); }
 function testStaffNotification(){ pushStaffNotification({code:'TEST-'+Date.now(),type:'emergenza',nick:'Paziente_Test'}, true); triggerEmergency(); }
 function setStaffRequestFilter(filter){ staffRequestFilter=filter; document.querySelectorAll('.staff-category-tabs button').forEach(b=>b.classList.remove('active')); const ids={all:'tabAllRequests',prenotazione:'tabPrenotazioni',emergenza:'tabEmergenze',chirurgia:'tabChirurgie',ticket:'tabTicket'}; const el=document.getElementById(ids[filter]); if(el) el.classList.add('active'); renderStaffRequests(false); }
 function updateRequestCounters(list){
