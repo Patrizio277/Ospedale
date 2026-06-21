@@ -587,6 +587,27 @@ header.scrolled .nav-profile-role{color:var(--sky-500);}
 .code-card.used{opacity:.64;}
 .role-order-note{font-size:12px;color:rgba(255,255,255,.46);margin-top:8px;line-height:1.45;}
 
+
+/* ============ STAFF REQUEST CATEGORIES + NOTIFICATIONS ============ */
+.staff-category-tabs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+.staff-category-tabs button{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.72);padding:10px 12px;border-radius:12px;font-weight:700;font-size:12px;text-align:left;transition:.25s;}
+.staff-category-tabs button:hover{background:rgba(255,255,255,.08);color:#fff;}
+.staff-category-tabs button.active{background:linear-gradient(145deg,rgba(47,143,255,.35),rgba(52,217,168,.18));border-color:rgba(90,168,255,.45);color:#fff;box-shadow:0 8px 18px rgba(0,0,0,.15);}
+.staff-category-tabs .count{float:right;font-family:var(--ff-mono);font-size:11px;color:var(--mint-300);}
+.notification-panel{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:16px;}
+.notification-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+.notification-head h5{margin:0!important;}
+.sound-toggle{display:inline-flex;align-items:center;gap:7px;color:rgba(255,255,255,.72);font-size:12px;font-weight:700;}
+.sound-toggle input{accent-color:var(--mint-500);}
+.notice-item{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+.notice-item:last-child{margin-bottom:0;}
+.notice-dot{width:9px;height:9px;border-radius:999px;background:var(--mint-300);box-shadow:0 0 0 4px rgba(159,240,216,.13);margin-top:6px;flex-shrink:0;}
+.notice-item.urgent .notice-dot{background:var(--red-500);box-shadow:0 0 0 4px rgba(255,93,108,.16);animation:blinkDot 1.2s infinite;}
+.notice-text{color:#fff;font-size:13px;font-weight:650;}
+.notice-time{color:rgba(255,255,255,.42);font-size:11px;font-family:var(--ff-mono);margin-top:2px;}
+.staff-tools-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.staff-tools-row .mini-btn{cursor:pointer;}
+
 </style>
 </head>
 <body>
@@ -938,9 +959,29 @@ header.scrolled .nav-profile-role{color:var(--sky-500);}
           </div>
           <div class="dash-grid">
             <div class="dash-col">
+              <div class="notification-panel">
+                <div class="notification-head">
+                  <h5>Centro notifiche richieste</h5>
+                  <label class="sound-toggle"><input type="checkbox" id="staffSoundToggle" onchange="toggleStaffSound(this.checked)"> Suono attivo</label>
+                </div>
+                <div id="staffNotifications"><div class="notice-item"><span class="notice-dot"></span><div><div class="notice-text">Nessuna nuova notifica.</div><div class="notice-time">live</div></div></div></div>
+              </div>
+
               <h5>Cartelle cliniche pazienti</h5>
-<div id="staffRequests"></div>
-<div id="staffClinicalDetail"></div>
+              <div class="staff-category-tabs">
+                <button id="tabAllRequests" class="active" onclick="setStaffRequestFilter('all')">Tutte <span class="count" id="countAllRequests">0</span></button>
+                <button id="tabPrenotazioni" onclick="setStaffRequestFilter('prenotazione')">Visite RP <span class="count" id="countPrenotazioni">0</span></button>
+                <button id="tabEmergenze" onclick="setStaffRequestFilter('emergenza')">Emergenze RP <span class="count" id="countEmergenze">0</span></button>
+                <button id="tabChirurgie" onclick="setStaffRequestFilter('chirurgia')">Chirurgie RP <span class="count" id="countChirurgie">0</span></button>
+                <button id="tabTicket" onclick="setStaffRequestFilter('ticket')">Ticket Assistenza <span class="count" id="countTicket">0</span></button>
+              </div>
+              <div class="staff-tools-row">
+                <button class="mini-btn" onclick="renderStaffRequests()">Aggiorna lista</button>
+                <button class="mini-btn" onclick="testStaffNotification()">Test notifica</button>
+                <button class="mini-btn" onclick="clearStaffNotifications()">Pulisci notifiche</button>
+              </div>
+              <div id="staffRequests"></div>
+              <div id="staffClinicalDetail"></div>
 
               <h5 style="margin-top:24px;">Calendario interventi RP</h5>
               <div id="surgeryCalendar"></div>
@@ -1065,6 +1106,9 @@ const ACCESS_CODES_KEY = 'santPelatusPatientAccessCodesV1';
 const OWNER_NICK = 'ziofede82';
 const OWNER_CODE = 'CAPO82';
 let selectedType = null;
+let staffRequestFilter = 'all';
+let knownRequestCodes = JSON.parse(localStorage.getItem('sp_known_request_codes') || '[]');
+let staffSoundEnabled = localStorage.getItem('sp_staff_sound') === '1';
 let currentUser = null;
 let currentPatient = null;
 const STAFF_ROLES = ['Infermiere','Medico','Chirurgo','Dottore','Direttore sanitario','Primario'];
@@ -1261,7 +1305,7 @@ function staffLogin(){
   const user=getUsers().find(u=>normalizeNick(u.nick)===normalizeNick(nickInput) && ((u.password||u.code)===code || u.code===code));
   if(!user){ alert('Login non valido. Capo: ziofede82 / CAPO82. Gli staff entrano con codice SPS-xxxxx creato dal capo.'); return; }
   currentUser=user; document.querySelector('.who-name').textContent=user.nick; document.getElementById('currentRoleLabel').textContent=user.owner?'Capo ospedale · Gestione ruoli':`${user.role} · Staff Sant Pelatus`; document.querySelector('.avatar').innerHTML=`<img class="mc-head" src="${minecraftHead(user.nick)}" alt="Skin ${esc(user.nick)}">`;
-  document.getElementById('staffLoginView').style.display='none'; document.getElementById('staffDashView').style.display='block'; document.getElementById('staffDashView').classList.toggle('owner-mode', !!user.owner); updateNavProfile(); renderStaffRequests(); renderStaffUsers(); renderPatientAccessCodes(); renderSurgeryCalendar();
+  document.getElementById('staffLoginView').style.display='none'; document.getElementById('staffDashView').style.display='block'; document.getElementById('staffDashView').classList.toggle('owner-mode', !!user.owner); const soundToggle=document.getElementById('staffSoundToggle'); if(soundToggle) soundToggle.checked=staffSoundEnabled; updateNavProfile(); renderStaffRequests(); renderStaffUsers(); renderPatientAccessCodes(); renderSurgeryCalendar();
 }
 function staffLogout(){ currentUser=null; document.getElementById('staffDashView').classList.remove('owner-mode'); document.getElementById('staffDashView').style.display='none'; document.getElementById('staffLoginView').style.display='block'; updateNavProfile(); }
 function renderStaffUsers(){
@@ -1287,10 +1331,46 @@ function resetStaffPassword(nick){
 }
 function changeStaffRole(nick, role){ if(!canManageStaff()) return; saveUsers(getUsers().map(u=>normalizeNick(u.nick)===normalizeNick(nick)&&!u.owner?{...u,role}:u)); renderStaffUsers(); }
 function removeStaffUser(nick){ if(!canManageStaff()) return; if(!confirm('Rimuovere questo membro staff?')) return; saveUsers(getUsers().filter(u=>normalizeNick(u.nick)!==normalizeNick(nick)||u.owner)); renderStaffUsers(); }
-function renderStaffRequests(){
+
+function typeIcon(type){ return {prenotazione:'📅', emergenza:'🚨', chirurgia:'🩺', ticket:'🎫'}[type] || '📁'; }
+function categoryTitle(type){ return {prenotazione:'Prenotazione visita RP', emergenza:'Richiesta emergenza RP', chirurgia:'Chirurgia RP', ticket:'Ticket assistenza'}[type] || 'Richiesta RP'; }
+function toggleStaffSound(on){ staffSoundEnabled=!!on; localStorage.setItem('sp_staff_sound', on?'1':'0'); if(on) playStaffSound(); }
+function playStaffSound(){
+  if(!staffSoundEnabled) return;
+  try{
+    const AudioCtx=window.AudioContext||window.webkitAudioContext; const ctx=new AudioCtx();
+    const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='sine'; o.frequency.value=880; g.gain.value=.0001;
+    o.connect(g); g.connect(ctx.destination); o.start();
+    g.gain.exponentialRampToValueAtTime(.14, ctx.currentTime+.02); g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime+.24);
+    setTimeout(()=>{o.stop(); ctx.close();},280);
+  }catch(e){}
+}
+function pushStaffNotification(req, isTest=false){
+  const box=document.getElementById('staffNotifications'); if(!box) return;
+  const item=document.createElement('div'); item.className='notice-item '+(req.type==='emergenza'?'urgent':'');
+  item.innerHTML=`<span class="notice-dot"></span><div><div class="notice-text">${isTest?'Test notifica: ':''}${typeIcon(req.type)} ${esc(req.nick||req.patientNick||'Un paziente')} ha fatto: ${esc(categoryTitle(req.type))}</div><div class="notice-time">${nowIT()} · <button class="mini-btn" style="margin-left:6px;" onclick="openClinicalRecord('${esc(req.code)}')">Apri</button></div></div>`;
+  if(box.querySelector('.notice-text') && box.textContent.includes('Nessuna nuova notifica')) box.innerHTML='';
+  box.prepend(item); while(box.children.length>6) box.removeChild(box.lastChild);
+  playStaffSound();
+}
+function checkNewStaffRequests(){
+  const list=getRequests(); const codes=list.map(r=>r.code); const fresh=list.filter(r=>!knownRequestCodes.includes(r.code));
+  if(fresh.length && currentUser){ fresh.reverse().forEach(r=>pushStaffNotification(r)); }
+  knownRequestCodes=codes; localStorage.setItem('sp_known_request_codes', JSON.stringify(knownRequestCodes));
+}
+function clearStaffNotifications(){ const box=document.getElementById('staffNotifications'); if(box) box.innerHTML='<div class="notice-item"><span class="notice-dot"></span><div><div class="notice-text">Notifiche pulite.</div><div class="notice-time">'+nowIT()+'</div></div></div>'; }
+function testStaffNotification(){ pushStaffNotification({code:'TEST-'+Date.now(),type:'emergenza',nick:'Paziente_Test'}, true); triggerEmergency(); }
+function setStaffRequestFilter(filter){ staffRequestFilter=filter; document.querySelectorAll('.staff-category-tabs button').forEach(b=>b.classList.remove('active')); const ids={all:'tabAllRequests',prenotazione:'tabPrenotazioni',emergenza:'tabEmergenze',chirurgia:'tabChirurgie',ticket:'tabTicket'}; const el=document.getElementById(ids[filter]); if(el) el.classList.add('active'); renderStaffRequests(false); }
+function updateRequestCounters(list){
+  const set=(id,n)=>{const el=document.getElementById(id); if(el) el.textContent=n;};
+  set('countAllRequests', list.length); set('countPrenotazioni', list.filter(r=>r.type==='prenotazione').length); set('countEmergenze', list.filter(r=>r.type==='emergenza').length); set('countChirurgie', list.filter(r=>r.type==='chirurgia').length); set('countTicket', list.filter(r=>r.type==='ticket').length);
+}
+function renderStaffRequests(runNotify=true){
   const box=document.getElementById('staffRequests'); if(!box) return; const list=getRequests();
-  if(!list.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessuna cartella clinica ricevuta</span><span class="t">live</span></div>'; renderSurgeryCalendar(); return; }
-  box.innerHTML=list.map(r=>`<div class="clinical-card"><div class="clinical-title"><div><h4>Cartella clinica · ${esc(r.character || r.patientNick || 'Paziente')}</h4><div class="clinical-meta">${esc(r.code)} · ${esc(typeLabel(r.type))} · Nick ${esc(r.nick||r.patientNick)}</div></div>${statusBadge(r.status)}</div><div class="clinical-meta">Reparto: ${esc(r.department)} · Creata: ${r.createdAt?esc(new Date(r.createdAt).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})):''}</div><div class="desc">${esc(r.description || 'Nessuna descrizione inserita.')}</div><div class="clinical-actions"><button class="mini-btn" onclick="openClinicalRecord('${esc(r.code)}')">Apri cartella</button><button class="mini-btn" onclick="acceptRequest('${esc(r.code)}')">Accetta</button><button class="mini-btn" onclick="completeRequest('${esc(r.code)}')">Chiudi</button></div></div>`).join('');
+  if(runNotify) checkNewStaffRequests(); updateRequestCounters(list);
+  const filtered = staffRequestFilter==='all' ? list : list.filter(r=>r.type===staffRequestFilter);
+  if(!filtered.length){ box.innerHTML=`<div class="shift-row"><span class="n">Nessuna cartella clinica in questa sezione</span><span class="t">${esc(staffRequestFilter==='all'?'tutte':categoryTitle(staffRequestFilter))}</span></div>`; renderSurgeryCalendar(); return; }
+  box.innerHTML=filtered.map(r=>`<div class="clinical-card"><div class="clinical-title"><div><h4>${typeIcon(r.type)} Cartella clinica · ${esc(r.character || r.patientNick || 'Paziente')}</h4><div class="clinical-meta">${esc(r.code)} · ${esc(categoryTitle(r.type))} · Nick ${esc(r.nick||r.patientNick)}</div></div>${statusBadge(r.status)}</div><div class="clinical-meta">Reparto: ${esc(r.department)} · Creata: ${r.createdAt?esc(new Date(r.createdAt).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})):''}</div><div class="desc">${esc(r.description || 'Nessuna descrizione inserita.')}</div><div class="clinical-actions"><button class="mini-btn" onclick="openClinicalRecord('${esc(r.code)}')">Apri cartella</button><button class="mini-btn" onclick="acceptRequest('${esc(r.code)}')">Accetta</button><button class="mini-btn" onclick="completeRequest('${esc(r.code)}')">Chiudi</button></div></div>`).join('');
   renderSurgeryCalendar();
 }
 function renderSurgeryCalendar(){
@@ -1393,6 +1473,8 @@ function renderPatientAccessCodes(){
 }
 function triggerEmergency(){ const toast=document.getElementById('emergencyToast'); toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),3800); }
 document.getElementById('burgerBtn').addEventListener('click', () => { document.getElementById('aree').scrollIntoView({behavior:'smooth'}); });
+
+setInterval(()=>{ if(currentUser) renderStaffRequests(); }, 5000);
 </script>
 </body>
 </html>
