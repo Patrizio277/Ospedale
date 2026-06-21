@@ -1504,5 +1504,263 @@ document.getElementById('burgerBtn').addEventListener('click', () => { document.
 
 setInterval(()=>{ if(currentUser) renderStaffRequests(); }, 5000);
 </script>
+
+<!-- SUPABASE LIVE DATABASE · Sant Pelatus -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===== SUPABASE COLLEGATO: dati condivisi tra pazienti e staff ===== */
+const SUPABASE_URL = 'https://tmzryljehthxnoyarfqn.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_5wutETGPcLRcR5Jh7i7VFQ_RU0siByn';
+const spdb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let spRealtimeStarted = false;
+let spLastRequestCodes = JSON.parse(localStorage.getItem('sp_known_request_codes_supabase') || '[]');
+
+function spAlert(msg){ alert(msg); }
+function spCode(prefix){ return prefix + '-' + Array.from({length:5},()=>Math.floor(Math.random()*10)).join(''); }
+function spReqCode(){ return 'SP-RP-' + Math.floor(1000 + Math.random()*9000); }
+function spNormCode(v){ return String(v||'').trim().toUpperCase().replace(/\s+/g,''); }
+function spIsSP(v){ return /^SP-?\d{5}$/.test(spNormCode(v)); }
+function spFormatSP(v){ const d=spNormCode(v).replace('SP-','').replace('SP',''); return 'SP-'+d; }
+function spNow(){ return new Date().toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'}); }
+function spPatientUI(row){ return row ? { id:row.id, code:row.codice_paziente, nick:row.nick_minecraft, name:row.nome_rp, password:row.password, createdAt:row.data_registrazione } : null; }
+function spStaffUI(row){ return row ? { id:row.id, code:row.codice_staff, nick:row.nickname, role: row.ruolo === 'Super Admin' ? 'Capo ospedale' : row.ruolo, password:row.password, owner: row.nickname === OWNER_NICK || row.codice_staff === OWNER_CODE } : null; }
+function spTypeFromDb(v){ return ({'Prenotazione visita RP':'prenotazione','Richiesta emergenza RP':'emergenza','Chirurgia RP':'chirurgia','Ticket assistenza':'ticket'})[v] || v || 'ticket'; }
+function spTypeToDb(v){ return typeLabel(v); }
+function spDescriptionWithMeta(desc, department, character, nick){
+  return `[Nome RP: ${character||''}]\n[Nick: ${nick||''}]\n[Reparto: ${department||''}]\n\n${desc||''}`;
+}
+function spParseMeta(text){
+  const t=String(text||'');
+  const grab=(k)=>{ const m=t.match(new RegExp('\\['+k+':\\s*([^\\]]*)\\]','i')); return m?m[1].trim():''; };
+  return { character:grab('Nome RP'), nick:grab('Nick'), department:grab('Reparto'), description:t.replace(/^\[[^\n]+\]\n?/gm,'').trim() };
+}
+async function spFetchPatients(){ const {data,error}=await spdb.from('pazienti').select('*').order('data_registrazione',{ascending:false}); if(error){console.error(error); return [];} return data||[]; }
+async function spFetchStaff(){ const {data,error}=await spdb.from('staff').select('*').order('id',{ascending:true}); if(error){console.error(error); return [];} return data||[]; }
+async function spFetchNotifications(){ const {data,error}=await spdb.from('notifiche').select('*').order('data_creazione',{ascending:false}).limit(30); if(error){console.error(error); return [];} return data||[]; }
+async function spFetchReplies(codes){
+  if(!codes.length) return {};
+  const {data,error}=await spdb.from('risposte').select('*').in('codice_richiesta',codes).order('data_creazione',{ascending:true});
+  if(error){ console.error(error); return {}; }
+  const map={}; (data||[]).forEach(x=>{ (map[x.codice_richiesta] ||= []).push({by:x.autore_nome,role:x.autore_ruolo,text:x.messaggio,at:new Date(x.data_creazione).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}); });
+  return map;
+}
+async function spFetchRequestsFull(){
+  const {data,error}=await spdb.from('richieste').select('*').order('data_creazione',{ascending:false});
+  if(error){ console.error(error); return []; }
+  const requests=data||[];
+  const patients=await spFetchPatients();
+  const pmap=Object.fromEntries(patients.map(p=>[p.codice_paziente,p]));
+  const replies=await spFetchReplies(requests.map(r=>r.codice_richiesta));
+  return requests.map(r=>{
+    const p=pmap[r.codice_paziente]; const meta=spParseMeta(r.descrizione);
+    return { code:r.codice_richiesta, patientCode:r.codice_paziente, type:spTypeFromDb(r.tipo_richiesta), character:meta.character || (p&&p.nome_rp) || 'Paziente', nick:meta.nick || (p&&p.nick_minecraft) || 'Paziente', patientNick:meta.nick || (p&&p.nick_minecraft) || 'Paziente', department:meta.department || 'Da valutare', description:meta.description || r.descrizione || '', status:r.stato || 'In attesa', messages:replies[r.codice_richiesta] || (r.risposta_staff ? [{by:'Staff',role:'Staff medico',text:r.risposta_staff,at:''}] : []), createdAt:r.data_creazione };
+  });
+}
+async function spCreateUniquePatientCode(){ for(let i=0;i<20;i++){ const c=spCode('SP'); const {data}=await spdb.from('pazienti').select('id').eq('codice_paziente',c).maybeSingle(); if(!data) return c; } return spCode('SP'); }
+async function spCreateUniqueStaffCode(){ for(let i=0;i<20;i++){ const c=spCode('SPS'); const {data}=await spdb.from('staff').select('id').eq('codice_staff',c).maybeSingle(); if(!data) return c; } return spCode('SPS'); }
+async function spCreateUniqueRequestCode(){ for(let i=0;i<20;i++){ const c=spReqCode(); const {data}=await spdb.from('richieste').select('id').eq('codice_richiesta',c).maybeSingle(); if(!data) return c; } return spReqCode(); }
+
+/* ===== OVERRIDE PAZIENTI ===== */
+patientRegister = async function(){
+  const nick=document.getElementById('patientNickLogin').value.trim();
+  const password=document.getElementById('patientPasswordLogin').value.trim();
+  if(!nick || !password){ spAlert('Per registrarti inserisci nickname Minecraft e una password.'); return; }
+  const exists=await spdb.from('pazienti').select('*').ilike('nick_minecraft',nick).maybeSingle();
+  if(exists.data){ spAlert('Questo paziente esiste già. Usa Accedi paziente.'); return; }
+  const code=await spCreateUniquePatientCode();
+  const {data,error}=await spdb.from('pazienti').insert({codice_paziente:code,nome_rp:nick,nick_minecraft:nick,password,stato:'Attivo'}).select().single();
+  if(error){ console.error(error); spAlert('Errore registrazione paziente: '+error.message); return; }
+  currentPatient=spPatientUI(data); openPatientArea(); updateNavProfile();
+  spAlert('Registrazione completata. Il tuo codice paziente è: '+code+'\nConservalo per controllare richieste e risposte.');
+};
+patientLogin = async function(){
+  const nick=document.getElementById('patientNickLogin').value.trim();
+  const passRaw=document.getElementById('patientPasswordLogin').value.trim();
+  if(!nick || !passRaw){ spAlert('Inserisci nickname Minecraft e password/codice SP.'); return; }
+  const passCode=spIsSP(passRaw)?spFormatSP(passRaw):passRaw;
+  let {data,error}=await spdb.from('pazienti').select('*').ilike('nick_minecraft',nick).maybeSingle();
+  if(error){ console.error(error); }
+  let ok=data && (data.password===passRaw || data.password===passCode || spNormCode(data.codice_paziente)===spNormCode(passCode));
+  if(!ok && spIsSP(passRaw)){
+    const res=await spdb.from('pazienti').select('*').eq('codice_paziente',passCode).maybeSingle();
+    data=res.data; ok=!!data;
+  }
+  if(!ok){ spAlert('Accesso paziente non valido. Registrati oppure chiedi allo staff di creare/resetare un codice SP.'); return; }
+  currentPatient=spPatientUI(data); openPatientArea(); updateNavProfile(); await renderPatientRequests();
+};
+changePatientPassword = async function(){
+  if(!currentPatient){ spAlert('Devi accedere come paziente.'); return; }
+  const pw=document.getElementById('patientNewPassword').value.trim();
+  if(!pw){ spAlert('Scrivi una nuova password.'); return; }
+  const {error}=await spdb.from('pazienti').update({password:pw}).eq('codice_paziente',currentPatient.code);
+  if(error){ console.error(error); spAlert('Errore cambio password: '+error.message); return; }
+  currentPatient.password=pw; document.getElementById('patientNewPassword').value=''; spAlert('Password paziente aggiornata.');
+};
+patientLogout = function(){ currentPatient=null; document.getElementById('patientAreaView').style.display='none'; document.getElementById('patientLoginView').style.display='block'; updateNavProfile(); };
+openPatientArea = function(){
+  document.getElementById('patientLoginView').style.display='none'; document.getElementById('patientAreaView').style.display='block';
+  document.getElementById('patientWelcome').textContent='Benvenuto, '+(currentPatient.name||currentPatient.nick);
+  document.getElementById('patientCodeLabel').textContent='Codice paziente: '+currentPatient.code;
+  document.getElementById('mcNick').value=currentPatient.nick;
+  renderPatientRequests();
+};
+
+/* ===== OVERRIDE RICHIESTE PAZIENTE ===== */
+submitBooking = async function(){
+  if(!currentPatient){ spAlert('Devi accedere come paziente prima di inviare una richiesta.'); return; }
+  if(!selectedType){ spAlert('Seleziona il tipo di richiesta.'); return; }
+  const character=document.getElementById('charName').value.trim() || currentPatient.name || currentPatient.nick;
+  const nick=document.getElementById('mcNick').value.trim() || currentPatient.nick;
+  const department=document.getElementById('department').value || 'Da valutare';
+  const description=document.getElementById('description').value.trim();
+  const code=await spCreateUniqueRequestCode();
+  const fullDesc=spDescriptionWithMeta(description,department,character,nick);
+  const {error}=await spdb.from('richieste').insert({codice_richiesta:code,codice_paziente:currentPatient.code,tipo_richiesta:selectedType,descrizione:fullDesc,stato:'In attesa'});
+  if(error){ console.error(error); spAlert('Errore invio richiesta: '+error.message); return; }
+  await spdb.from('cartelle_cliniche').insert({codice_paziente:currentPatient.code,codice_richiesta:code,nome_paziente:character,nick_minecraft:nick,tipo_richiesta:selectedType,descrizione:description,stato:'Aperta',creata_da:'Sistema'});
+  await spdb.from('notifiche').insert({titolo:'Nuova '+typeLabel(selectedType),messaggio:`${nick} ha fatto: ${typeLabel(selectedType)} · ${code}`,letto:false});
+  document.getElementById('bookingForm').style.display='none'; document.getElementById('formSuccess').classList.add('active');
+  document.getElementById('ticketCode').textContent=code; document.getElementById('lookupCode').value=code;
+  const el=document.getElementById('patientCodeAfterSubmit'); if(el) el.textContent='Codice paziente: '+currentPatient.code;
+  await renderPatientRequests(); await lookupTicket();
+};
+lookupTicket = async function(){
+  const code=document.getElementById('lookupCode').value.trim().toUpperCase(); const box=document.getElementById('lookupResult');
+  if(!code){ box.innerHTML='<div class="notice">Inserisci il codice pratica.</div>'; return; }
+  const all=await spFetchRequestsFull(); const req=all.find(r=>r.code.toUpperCase()===code);
+  if(!req){ box.innerHTML='<div class="notice">Nessuna richiesta trovata con questo codice.</div>'; return; }
+  if(currentPatient && req.patientCode!==currentPatient.code){ box.innerHTML='<div class="notice">Questo ticket appartiene a un altro paziente.</div>'; return; }
+  box.innerHTML=renderRequestLight(req);
+};
+renderPatientRequests = async function(){
+  const box=document.getElementById('patientRequestsList'); if(!box) return;
+  if(!currentPatient){ box.innerHTML='<div class="notice">Accedi per vedere le tue richieste.</div>'; return; }
+  const all=await spFetchRequestsFull(); const mine=all.filter(r=>r.patientCode===currentPatient.code);
+  box.innerHTML=mine.length ? mine.map(renderRequestLight).join('') : '<div class="notice">Non hai ancora inviato richieste.</div>';
+};
+sendPatientReply = async function(code){
+  if(!currentPatient){ spAlert('Devi accedere come paziente.'); return; }
+  const el=document.getElementById('patientReply-'+code); const text=el?el.value.trim():'';
+  if(!text){ spAlert('Scrivi un messaggio prima di inviare.'); return; }
+  const {error}=await spdb.from('risposte').insert({codice_richiesta:code,autore_codice:currentPatient.code,autore_nome:currentPatient.nick,autore_ruolo:'Paziente',messaggio:text});
+  if(error){ console.error(error); spAlert('Errore invio messaggio: '+error.message); return; }
+  await renderPatientRequests(); await lookupTicket();
+};
+
+/* ===== OVERRIDE STAFF ===== */
+staffLogin = async function(){
+  const nick=document.getElementById('staffNick').value.trim(); const code=document.getElementById('staffCode').value.trim();
+  if(!nick || !code){ spAlert('Inserisci nickname staff e codice/password.'); return; }
+  const {data,error}=await spdb.from('staff').select('*').ilike('nickname',nick).maybeSingle();
+  if(error){ console.error(error); }
+  if(!data || !(data.password===code || data.codice_staff===code)){ spAlert('Login staff non valido. Capo: ziofede82 / CAPO82.'); return; }
+  currentUser=spStaffUI(data);
+  document.querySelector('.who-name').textContent=currentUser.nick;
+  document.getElementById('currentRoleLabel').textContent=currentUser.owner?'Capo ospedale · Gestione ruoli':`${currentUser.role} · Staff Sant Pelatus`;
+  document.querySelector('.avatar').innerHTML=`<img class="mc-head" src="${minecraftHead(currentUser.nick)}" alt="Skin ${esc(currentUser.nick)}">`;
+  document.getElementById('staffLoginView').style.display='none'; document.getElementById('staffDashView').style.display='block'; document.getElementById('staffDashView').classList.toggle('owner-mode',!!currentUser.owner);
+  const soundToggle=document.getElementById('staffSoundToggle'); if(soundToggle) soundToggle.checked=staffSoundEnabled;
+  updateNavProfile(); await renderStaffNotifications(); await renderStaffRequests(); await renderStaffUsers(); await renderPatientAccessCodes(); await renderSurgeryCalendar();
+  startSupabaseLive();
+};
+staffLogout = function(){ currentUser=null; document.getElementById('staffDashView').classList.remove('owner-mode'); document.getElementById('staffDashView').style.display='none'; document.getElementById('staffLoginView').style.display='block'; updateNavProfile(); };
+renderStaffUsers = async function(){
+  const box=document.getElementById('staffUsersList'); if(!box) return; const users=(await spFetchStaff()).map(spStaffUI);
+  box.innerHTML=users.map(u=>`<div class="staff-user-card"><div class="meta"><div class="name">${esc(u.nick)} ${u.owner?'<span class="role-pill">CAPO</span>':''}</div><div class="role">${esc(u.role)} · codice: ${canManageStaff()?esc(u.code):'nascosto'}</div></div><div class="staff-user-actions">${canManageStaff()&&!u.owner?`<select class="status-select" onchange="changeStaffRole('${esc(u.nick)}', this.value)">${STAFF_ROLES.map(r=>`<option ${u.role===r?'selected':''}>${r}</option>`).join('')}</select><button class="mini-btn" onclick="resetStaffPassword('${esc(u.nick)}')">Nuovo SPS</button><button class="mini-btn" onclick="removeStaffUser('${esc(u.nick)}')">Rimuovi</button>`:''}</div></div>`).join('');
+};
+addStaffUser = async function(){
+  if(!canManageStaff()){ spAlert('Solo ziofede82 può gestire i ruoli.'); return; }
+  const nick=document.getElementById('newStaffNick').value.trim(), role=document.getElementById('newStaffRole').value;
+  if(!nick){ spAlert('Inserisci nickname Minecraft.'); return; }
+  const code=await spCreateUniqueStaffCode();
+  const {error}=await spdb.from('staff').upsert({codice_staff:code,nickname:nick,ruolo:role,password:code,stato:'Attivo'},{onConflict:'nickname'});
+  if(error){ console.error(error); spAlert('Errore creazione staff: '+error.message); return; }
+  document.getElementById('newStaffNick').value=''; await renderStaffUsers(); spAlert('Staff creato/aggiornato.\nNickname: '+nick+'\nCodice staff: '+code+'\nIl codice è anche la password iniziale.');
+};
+resetStaffPassword = async function(nick){ if(!canManageStaff()) return; const code=await spCreateUniqueStaffCode(); const {error}=await spdb.from('staff').update({codice_staff:code,password:code}).ilike('nickname',nick); if(error){spAlert(error.message);return;} await renderStaffUsers(); spAlert('Nuovo codice staff per '+nick+': '+code); };
+changeStaffRole = async function(nick,role){ if(!canManageStaff()) return; await spdb.from('staff').update({ruolo:role}).ilike('nickname',nick); await renderStaffUsers(); };
+removeStaffUser = async function(nick){ if(!canManageStaff()) return; if(!confirm('Rimuovere questo membro staff?')) return; await spdb.from('staff').delete().ilike('nickname',nick); await renderStaffUsers(); };
+
+/* ===== OVERRIDE NOTIFICHE E CARTELLE ===== */
+renderStaffNotifications = async function(){
+  const box=document.getElementById('staffNotifications'); if(!box) return; const rows=await spFetchNotifications();
+  if(!rows.length){ box.innerHTML='<div class="notice-item"><span class="notice-dot"></span><div><div class="notice-text">Nessuna nuova notifica.</div><div class="notice-time">live</div></div></div>'; return; }
+  box.innerHTML=rows.slice(0,12).map(n=>{ const msg=n.messaggio||''; const m=msg.match(/(SP-RP-\d+)/); const code=m?m[1]:''; const urgent=/emergenza/i.test((n.titolo||'')+' '+msg); return `<div class="notice-item ${urgent?'urgent':''}"><span class="notice-dot"></span><div><div class="notice-text">${esc(n.titolo||'Notifica')}</div><div class="notice-time">${esc(msg)} · ${new Date(n.data_creazione).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}${code?` · <button class="mini-btn" style="margin-left:6px;" onclick="openClinicalRecord('${code}')">Apri</button>`:''}</div></div></div>`; }).join('');
+};
+clearStaffNotifications = async function(){ await spdb.from('notifiche').delete().neq('id',0); await renderStaffNotifications(); };
+testStaffNotification = async function(){ await spdb.from('notifiche').insert({titolo:'Test notifica staff',messaggio:'Paziente_Test ha fatto: Richiesta emergenza RP · TEST',letto:false}); await renderStaffNotifications(); playStaffSound(); triggerEmergency(); };
+renderStaffRequests = async function(runNotify=true){
+  const box=document.getElementById('staffRequests'); if(!box) return; const list=await spFetchRequestsFull();
+  if(runNotify && currentUser){ const codes=list.map(r=>r.code); const fresh=list.filter(r=>!spLastRequestCodes.includes(r.code)); if(fresh.length && spLastRequestCodes.length) playStaffSound(); spLastRequestCodes=codes; localStorage.setItem('sp_known_request_codes_supabase',JSON.stringify(codes)); }
+  updateRequestCounters(list); const filtered=staffRequestFilter==='all'?list:list.filter(r=>r.type===staffRequestFilter);
+  if(!filtered.length){ box.innerHTML=`<div class="shift-row"><span class="n">Nessuna cartella clinica in questa sezione</span><span class="t">${esc(staffRequestFilter==='all'?'tutte':categoryTitle(staffRequestFilter))}</span></div>`; await renderSurgeryCalendar(); return; }
+  box.innerHTML=filtered.map(r=>`<div class="clinical-card"><div class="clinical-title"><div><h4>${typeIcon(r.type)} Cartella clinica · ${esc(r.character||r.patientNick||'Paziente')}</h4><div class="clinical-meta">${esc(r.code)} · ${esc(categoryTitle(r.type))} · Nick ${esc(r.nick||r.patientNick)}</div></div>${statusBadge(r.status)}</div><div class="clinical-meta">Reparto: ${esc(r.department)} · Creata: ${r.createdAt?esc(new Date(r.createdAt).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})):''}</div><div class="desc">${esc(r.description||'Nessuna descrizione inserita.')}</div><div class="clinical-actions"><button class="mini-btn" onclick="openClinicalRecord('${esc(r.code)}')">Apri cartella</button><button class="mini-btn" onclick="acceptRequest('${esc(r.code)}')">Accetta</button><button class="mini-btn" onclick="completeRequest('${esc(r.code)}')">Chiudi</button></div></div>`).join('');
+  await renderSurgeryCalendar(); await renderStaffNotifications();
+};
+renderSurgeryCalendar = async function(){
+  const box=document.getElementById('surgeryCalendar'); if(!box) return; const list=await spFetchRequestsFull(); const surgeries=list.filter(r=>r.type==='chirurgia'||String(r.department||'').toLowerCase().includes('chirurgia'));
+  if(!surgeries.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessun intervento RP programmato dalle richieste</span><span class="t">live</span></div>'; return; }
+  box.innerHTML=surgeries.slice(0,8).map(r=>`<div class="shift-row" onclick="openClinicalRecord('${esc(r.code)}')" style="cursor:pointer;"><span class="n">${esc(r.character)} — ${esc(typeLabel(r.type))}</span><span class="t">${esc(r.status)}</span></div>`).join('');
+};
+openClinicalRecord = async function(code,scroll=true){
+  if(!currentUser) return; const all=await spFetchRequestsFull(); const r=all.find(x=>x.code===code); const box=document.getElementById('staffClinicalDetail'); if(!box||!r) return;
+  box.innerHTML=`<div class="clinical-detail"><h4>Cartella clinica del paziente</h4><div class="clinical-meta">${esc(r.code)} · ${esc(typeLabel(r.type))}</div><div class="detail-grid"><div class="detail-item"><span class="k">Nome paziente</span><span class="v">${esc(r.character||'Non indicato')}</span></div><div class="detail-item"><span class="k">Nick Minecraft</span><span class="v">${esc(r.nick||r.patientNick)}</span></div><div class="detail-item"><span class="k">Codice SP</span><span class="v">${esc(r.patientCode)}</span></div><div class="detail-item"><span class="k">Reparto</span><span class="v">${esc(r.department)}</span></div><div class="detail-item"><span class="k">Stato pratica</span><span class="v">${esc(r.status)}</span></div><div class="detail-item"><span class="k">Aperta il</span><span class="v">${r.createdAt?esc(new Date(r.createdAt).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})):'—'}</span></div></div><div class="detail-item" style="margin-bottom:12px;"><span class="k">Descrizione RP</span><span class="v">${esc(r.description||'Nessuna descrizione.')}</span></div>${renderStaffMessages(r)}<div class="reply-box"><select class="status-select" id="detailStatus-${esc(r.code)}">${['In attesa','Accettata','Urgente','In cura','Completata','Rifiutata'].map(s=>`<option ${r.status===s?'selected':''}>${s}</option>`).join('')}</select><textarea id="detailReply-${esc(r.code)}" placeholder="Scrivi risposta professionale al paziente..."></textarea><div class="clinical-actions"><button class="btn btn-mint btn-sm" onclick="saveClinicalRecord('${esc(r.code)}')">Salva stato e risposta</button><button class="btn btn-primary btn-sm" onclick="acceptRequest('${esc(r.code)}')">Accetta richiesta</button><button class="btn btn-outline btn-sm" onclick="completeRequest('${esc(r.code)}')">Chiudi pratica</button></div></div></div>`;
+  if(scroll) box.scrollIntoView({behavior:'smooth',block:'nearest'});
+};
+async function spUpdateStatus(code,status){ await spdb.from('richieste').update({stato:status}).eq('codice_richiesta',code); await spdb.from('cartelle_cliniche').update({stato:status==='Completata'?'Chiusa':'Aperta'}).eq('codice_richiesta',code); }
+updateRequestStatus = async function(code,status){ await spUpdateStatus(code,status); await renderStaffRequests(); await renderPatientRequests(); await openClinicalRecord(code,false); };
+acceptRequest = async function(code){ if(!currentUser){ spAlert('Devi accedere come staff.'); return; } await spUpdateStatus(code,'Accettata'); await spdb.from('risposte').insert({codice_richiesta:code,autore_codice:currentUser.code,autore_nome:currentUser.nick,autore_ruolo:currentUser.role,messaggio:'Richiesta accettata. Presentati al Sant Pelatus e comunica il codice ticket al banco accettazione.'}); await renderStaffRequests(); await renderPatientRequests(); await openClinicalRecord(code,false); };
+completeRequest = async function(code){ await updateRequestStatus(code,'Completata'); };
+saveClinicalRecord = async function(code){
+  if(!currentUser){ spAlert('Devi accedere come staff.'); return; }
+  const status=document.getElementById('detailStatus-'+code)?.value || 'In cura'; const text=document.getElementById('detailReply-'+code)?.value.trim() || '';
+  await spUpdateStatus(code,status);
+  if(text){ await spdb.from('risposte').insert({codice_richiesta:code,autore_codice:currentUser.code,autore_nome:currentUser.nick,autore_ruolo:currentUser.role,messaggio:text}); await spdb.from('richieste').update({risposta_staff:text,assegnato_a:currentUser.nick}).eq('codice_richiesta',code); }
+  await renderStaffRequests(); await renderPatientRequests(); await openClinicalRecord(code,false);
+};
+sendStaffReply = async function(code){ await saveClinicalRecord(code); };
+
+/* ===== CODICI PAZIENTE DA STAFF ===== */
+generatePatientAccessCode = async function(){
+  if(!currentUser){ spAlert('Devi accedere come staff.'); return; }
+  const input=document.getElementById('newPatientAccessName'); const patientName=input.value.trim(); if(!patientName){ spAlert('Inserisci il nome paziente / nickname Minecraft.'); input.focus(); return; }
+  const code=await spCreateUniquePatientCode(); const existing=await spdb.from('pazienti').select('*').ilike('nick_minecraft',patientName).maybeSingle();
+  let error;
+  if(existing.data){ ({error}=await spdb.from('pazienti').update({codice_paziente:code,password:code,stato:'Attivo'}).eq('id',existing.data.id)); }
+  else { ({error}=await spdb.from('pazienti').insert({codice_paziente:code,nome_rp:patientName,nick_minecraft:patientName,password:code,stato:'Attivo'})); }
+  if(error){ console.error(error); spAlert('Errore creazione codice paziente: '+error.message); return; }
+  input.value=''; await renderPatientAccessCodes(); spAlert('Accesso paziente creato.\nPaziente: '+patientName+'\nCodice: '+code+'\nIl paziente entra usando questo codice come password iniziale.');
+};
+staffResetPatientPassword = async function(){
+  if(!currentUser){ spAlert('Devi accedere come staff.'); return; }
+  const nick=document.getElementById('resetPatientNick').value.trim(); const manual=document.getElementById('resetPatientPassword').value.trim(); if(!nick){ spAlert('Inserisci il nickname del paziente.'); return; }
+  const p=await spdb.from('pazienti').select('*').ilike('nick_minecraft',nick).maybeSingle(); if(!p.data){ spAlert('Paziente non trovato. Puoi crearlo dal campo “Crea accesso SP”.'); return; }
+  const newPw=manual || await spCreateUniquePatientCode(); const payload=manual?{password:newPw}:{password:newPw,codice_paziente:newPw};
+  const {error}=await spdb.from('pazienti').update(payload).eq('id',p.data.id); if(error){ spAlert(error.message); return; }
+  document.getElementById('resetPatientNick').value=''; document.getElementById('resetPatientPassword').value=''; await renderPatientAccessCodes(); spAlert('Password aggiornata per '+nick+'.\nNuova password: '+newPw);
+};
+renderPatientAccessCodes = async function(){
+  const box=document.getElementById('patientAccessCodesList'); if(!box) return; const patients=await spFetchPatients();
+  if(!patients.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessun paziente registrato</span><span class="t">SP</span></div>'; return; }
+  box.innerHTML=patients.slice(0,12).map(p=>`<div class="code-card"><div class="code-main"><div><div class="patient-name">${esc(p.nick_minecraft)}</div><div class="code-meta">Nome RP: ${esc(p.nome_rp||p.nick_minecraft)} · ${p.data_registrazione?esc(new Date(p.data_registrazione).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})):''}</div></div><div class="patient-code">${esc(p.codice_paziente)}</div></div><div class="code-meta">Password attuale: ${canManageStaff()?esc(p.password||p.codice_paziente):'nascosta'}</div></div>`).join('');
+};
+
+function startSupabaseLive(){
+  if(spRealtimeStarted) return; spRealtimeStarted=true;
+  try{
+    spdb.channel('sant-pelatus-live')
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'richieste'}, async payload=>{ if(currentUser){ await renderStaffRequests(false); await renderStaffNotifications(); playStaffSound(); triggerEmergency(); } })
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'notifiche'}, async payload=>{ if(currentUser){ await renderStaffNotifications(); playStaffSound(); } })
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'risposte'}, async payload=>{ if(currentUser) await renderStaffRequests(false); if(currentPatient) await renderPatientRequests(); })
+      .subscribe();
+  }catch(e){ console.warn('Realtime non attivo, uso aggiornamento ogni 5 secondi.',e); }
+}
+
+window.addEventListener('load', async()=>{
+  await renderStaffNotifications(); await renderStaffRequests(false); await renderPatientAccessCodes();
+});
+setInterval(async()=>{ if(currentUser){ await renderStaffRequests(); await renderStaffNotifications(); } if(currentPatient){ await renderPatientRequests(); } }, 5000);
+</script>
+
 </body>
 </html>
