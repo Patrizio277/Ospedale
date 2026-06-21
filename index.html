@@ -770,7 +770,7 @@ header.scrolled .nav-profile-role{color:var(--sky-500);}
               <button class="btn btn-mint" onclick="patientLogin()">Accedi paziente →</button>
               <button class="btn btn-outline" onclick="patientRegister()">Nuova registrazione</button>
             </div>
-            <p class="auth-note">Se lo staff ti ha creato un accesso, usa il codice <b>SP-xxxxx</b> come password iniziale. Dopo l'accesso puoi cambiarla.</p>
+            <p class="auth-note">Se lo staff ti ha creato un accesso, usa il codice <b>SP-xxxxx</b> come password iniziale. Puoi scriverlo anche senza trattino; dopo l'accesso puoi cambiarla.</p>
           </div>
 
           <div id="patientAreaView" style="display:none;">
@@ -1148,12 +1148,45 @@ function patientRegister(){
   currentPatient = patient; openPatientArea();
   alert('Registrazione completata. Il tuo codice paziente è: ' + code + '\nConservalo per il tuo profilo RP.');
 }
+function cleanAccessCode(value){
+  return String(value || '').trim().toUpperCase().replace(/\s+/g,'');
+}
+function isPatientCode(value){
+  return /^SP-?\d{5}$/.test(cleanAccessCode(value));
+}
+function normalizePatientCode(value){
+  const v = cleanAccessCode(value);
+  const digits = v.replace('SP-','').replace('SP','');
+  return 'SP-' + digits;
+}
 function patientLogin(){
   const nick = document.getElementById('patientNickLogin').value.trim();
-  const password = document.getElementById('patientPasswordLogin').value.trim();
-  if(!nick || !password){ alert('Inserisci nickname Minecraft e password/codice SP.'); return; }
-  const patient = getPatients().find(p => normalizeNick(p.nick) === normalizeNick(nick) && (p.password === password || p.code === password.toUpperCase()));
-  if(!patient){ alert('Accesso paziente non valido. Registrati o chiedi allo staff di creare/resetare un codice SP.'); return; }
+  const passwordRaw = document.getElementById('patientPasswordLogin').value.trim();
+  const passwordCode = isPatientCode(passwordRaw) ? normalizePatientCode(passwordRaw) : passwordRaw;
+  if(!nick || !passwordRaw){ alert('Inserisci nickname Minecraft e password/codice SP.'); return; }
+
+  let patients = getPatients();
+  let patient = patients.find(p => normalizeNick(p.nick) === normalizeNick(nick) && (p.password === passwordRaw || p.password === passwordCode || cleanAccessCode(p.code) === cleanAccessCode(passwordCode)));
+
+  // Se lo staff ha creato il codice con un nome leggermente diverso, entra comunque tramite codice SP.
+  if(!patient && isPatientCode(passwordRaw)){
+    patient = patients.find(p => cleanAccessCode(p.code) === cleanAccessCode(passwordCode) || cleanAccessCode(p.password) === cleanAccessCode(passwordCode));
+    if(patient){
+      patient = {...patient, nick: patient.nick || nick, lastLoginNick:nick};
+      patients = patients.map(p => cleanAccessCode(p.code) === cleanAccessCode(patient.code) ? patient : p);
+      savePatients(patients);
+    }
+  }
+
+  // Modalità demo GitHub Pages: se il codice SP è valido ma non esiste in questo browser, crea il profilo locale.
+  // Questo evita il blocco dopo copia/incolla o quando si prova il sito da un browser nuovo.
+  if(!patient && isPatientCode(passwordRaw)){
+    patient = {nick, code:passwordCode, password:passwordCode, createdBy:'Accesso con codice SP', createdAt:new Date().toISOString()};
+    patients.push(patient);
+    savePatients(patients);
+  }
+
+  if(!patient){ alert('Accesso paziente non valido. Usa il tuo codice SP o registrati come nuovo paziente.'); return; }
   currentPatient = patient; openPatientArea();
 }
 function openPatientArea(){
