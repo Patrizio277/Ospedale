@@ -746,22 +746,29 @@ header.scrolled .nav-profile-role{color:var(--sky-500);}
         <div class="card-panel reveal">
           <div id="patientLoginView" class="auth-card" style="padding:0; box-shadow:none; border:none; margin:0;">
             <h3 style="margin-bottom:8px; font-size:20px;">Accesso Area Pazienti</h3>
-            <p style="color:#5a7191; font-size:14.5px; margin-bottom:18px;">Accedi con il codice personale creato dallo staff. Dopo l'invio potrai vedere risposte, stato e messaggi dei medici.</p>
+            <p style="color:#5a7191; font-size:14.5px; margin-bottom:18px;">Accedi o registrati prima di inviare richieste. Ogni paziente riceve un codice automatico formato <b>SP-xxxxx</b>.</p>
             <div class="row2">
-              <div class="field"><label>Nickname Minecraft</label><input id="patientNickLogin" type="text" placeholder="Es. ziofede82"></div>
-              <div class="field"><label>Codice personale</label><input id="patientCodeLogin" type="password" placeholder="Es. SP-ACCESS-123456"></div>
+              <div class="field"><label>Nickname Minecraft</label><input id="patientNickLogin" type="text" placeholder="Es. MarekHolloway"></div>
+              <div class="field"><label>Password / codice SP</label><input id="patientPasswordLogin" type="password" placeholder="Password o SP-12345"></div>
             </div>
             <div class="auth-actions">
               <button class="btn btn-mint" onclick="patientLogin()">Accedi paziente →</button>
-              <button class="btn btn-outline" onclick="showPatientCodeInfo()">Come ottengo il codice?</button>
+              <button class="btn btn-outline" onclick="patientRegister()">Nuova registrazione</button>
             </div>
-            <p class="auth-note">Il codice viene generato da un membro staff dal pannello medico. Demo compatibile con GitHub Pages.</p>
+            <p class="auth-note">Se lo staff ti ha creato un accesso, usa il codice <b>SP-xxxxx</b> come password iniziale. Dopo l'accesso puoi cambiarla.</p>
           </div>
 
           <div id="patientAreaView" style="display:none;">
             <div class="patient-session-bar">
-              <div><strong id="patientWelcome">Area Paziente</strong><span>Richieste e risposte mediche RP</span></div>
+              <div><strong id="patientWelcome">Area Paziente</strong><span id="patientCodeLabel">Codice paziente: SP-00000</span></div>
               <button class="mini-btn" onclick="patientLogout()">Esci</button>
+            </div>
+            <div style="margin:18px 0 24px; padding:18px; border:1px solid var(--line); border-radius:var(--radius-md); background:#fbfdff;">
+              <h3 style="font-size:17px; margin-bottom:10px;">Profilo paziente</h3>
+              <div class="row2">
+                <div class="field"><label>Nuova password</label><input id="patientNewPassword" type="password" placeholder="Scrivi nuova password"></div>
+                <div style="display:flex; align-items:flex-end;"><button class="btn btn-dark btn-block" onclick="changePatientPassword()">Cambia password</button></div>
+              </div>
             </div>
 
           <div class="stepper">
@@ -902,7 +909,7 @@ header.scrolled .nav-profile-role{color:var(--sky-500);}
             <div class="field" style="text-align:left;"><label>Nickname Minecraft</label><input id="staffNick" type="text" placeholder="Es. Dr_Reyes"></div>
             <div class="field" style="text-align:left;"><label>Codice accesso staff</label><input id="staffCode" type="password" placeholder="••••••••"></div>
             <button class="btn btn-mint btn-block" onclick="staffLogin()">Entra in Dashboard →</button>
-            <p style="margin-top:18px; font-size:12px;">Capo: nickname <b>ziofede82</b> · codice <b>CAPO82</b>. Staff demo: codice <b>SANTPELATUS2026</b></p>
+            <p style="margin-top:18px; font-size:12px;">Capo: nickname <b>ziofede82</b> · codice <b>CAPO82</b>. Gli altri staff usano un codice automatico <b>SPS-xxxxx</b>.</p>
           </div>
         </div>
 
@@ -931,7 +938,6 @@ header.scrolled .nav-profile-role{color:var(--sky-500);}
                 <h5>Gestione capo · assegna ruoli</h5>
                 <div class="admin-form">
                   <input id="newStaffNick" type="text" placeholder="Nickname Minecraft">
-                  <input id="newStaffCode" type="text" placeholder="Codice login">
                   <select id="newStaffRole">
                     <option>Infermiere</option>
                     <option>Medico</option>
@@ -940,19 +946,24 @@ header.scrolled .nav-profile-role{color:var(--sky-500);}
                     <option>Direttore sanitario</option>
                     <option>Primario</option>
                   </select>
-                  <button class="btn btn-mint btn-block" onclick="addStaffUser()">Aggiungi / aggiorna</button>
+                  <button class="btn btn-mint btn-block" onclick="addStaffUser()">Crea staff con codice SPS</button>
                 </div>
-                <p style="color:rgba(255,255,255,0.45); font-size:12px;">Solo ziofede82 vede questo pannello.</p>
+                <p style="color:rgba(255,255,255,0.45); font-size:12px;">Solo ziofede82 vede questo pannello. Ogni staff creato riceve automaticamente un codice <b>SPS-xxxxx</b>.</p>
               </div>
 
               <div class="staff-admin-panel" id="patientCodePanel">
-                <h5>Codici personali pazienti</h5>
+                <h5>Accessi pazienti</h5>
                 <div class="admin-form">
                   <input id="newPatientAccessName" type="text" placeholder="Nome paziente / nickname Minecraft">
-                  <button class="btn btn-mint btn-block" onclick="generatePatientAccessCode()">Genera codice personale</button>
+                  <button class="btn btn-mint btn-block" onclick="generatePatientAccessCode()">Crea accesso SP</button>
+                </div>
+                <div class="admin-form" style="margin-top:10px;">
+                  <input id="resetPatientNick" type="text" placeholder="Nickname paziente">
+                  <input id="resetPatientPassword" type="text" placeholder="Nuova password oppure vuoto = nuovo SP">
+                  <button class="btn btn-primary btn-block" onclick="staffResetPatientPassword()">Modifica password paziente</button>
                 </div>
                 <div id="patientAccessCodesList" style="margin-top:12px;"></div>
-                <p class="role-order-note">Lo staff chiede il nome al paziente, genera il codice e glielo consegna. Il paziente userà quel codice per accedere all'area pazienti.</p>
+                <p class="role-order-note">Lo staff può creare un paziente con codice <b>SP-xxxxx</b>. Il paziente usa quel codice come password iniziale e poi può cambiarla.</p>
               </div>
 
               <h5 style="margin-top:24px;">Comunicazioni staff</h5>
@@ -1036,7 +1047,6 @@ const DB_KEY = 'santPelatusRequestsV3';
 const USERS_KEY = 'santPelatusStaffUsersV3';
 const PATIENTS_KEY = 'santPelatusPatientsV1';
 const ACCESS_CODES_KEY = 'santPelatusPatientAccessCodesV1';
-const DEFAULT_STAFF_CODE = 'SANTPELATUS2026';
 const OWNER_NICK = 'ziofede82';
 const OWNER_CODE = 'CAPO82';
 let selectedType = null;
@@ -1053,16 +1063,15 @@ function getPatients(){ try { return JSON.parse(localStorage.getItem(PATIENTS_KE
 function savePatients(list){ localStorage.setItem(PATIENTS_KEY, JSON.stringify(list)); }
 function getAccessCodes(){ try { return JSON.parse(localStorage.getItem(ACCESS_CODES_KEY)) || []; } catch(e){ return []; } }
 function saveAccessCodes(list){ localStorage.setItem(ACCESS_CODES_KEY, JSON.stringify(list)); }
+function randomDigits(len=5){ return Array.from({length:len}, () => Math.floor(Math.random()*10)).join(''); }
+function makeUniqueCode(prefix, existingCodes=[]){ let code; do { code = prefix + '-' + randomDigits(5); } while(existingCodes.includes(code)); return code; }
 function defaultUsers(){ return [
-  {nick: OWNER_NICK, code: OWNER_CODE, role:'Capo ospedale', owner:true},
-  {nick:'Dr_Reyes', code: DEFAULT_STAFF_CODE, role:'Chirurgo', owner:false},
-  {nick:'K_Soto', code:'INF123', role:'Infermiere', owner:false},
-  {nick:'M_Lang', code:'MED123', role:'Medico', owner:false}
+  {nick: OWNER_NICK, code: OWNER_CODE, password: OWNER_CODE, role:'Capo ospedale', owner:true}
 ]; }
 function ensureOwner(users){
   const exists = users.some(u => normalizeNick(u.nick) === OWNER_NICK);
   const list = exists ? users : [defaultUsers()[0], ...users];
-  return list.map(u => normalizeNick(u.nick) === OWNER_NICK ? {...u, code:OWNER_CODE, role:'Capo ospedale', owner:true} : u);
+  return list.map(u => normalizeNick(u.nick) === OWNER_NICK ? {...u, code:OWNER_CODE, password:OWNER_CODE, role:'Capo ospedale', owner:true} : {...u, password:u.password || u.code});
 }
 function getUsers(){ try { const saved = JSON.parse(localStorage.getItem(USERS_KEY)); if(Array.isArray(saved) && saved.length) return ensureOwner(saved); } catch(e){} const users=defaultUsers(); saveUsers(users); return users; }
 function saveUsers(users){ localStorage.setItem(USERS_KEY, JSON.stringify(ensureOwner(users))); }
@@ -1109,41 +1118,46 @@ function goToArea(area){
 
 /* ===== LOGIN PAZIENTI ===== */
 function showPatientCodeInfo(){
-  alert('Per entrare nell’Area Pazienti devi chiedere a uno staff medico di generarti un codice personale. Lo staff clicca “Genera codice personale”, inserisce il tuo nome e ti passa il codice.');
+  alert('Puoi registrarti da solo oppure chiedere allo staff di creare un accesso SP. Il codice SP può essere usato come password iniziale.');
 }
 function patientRegister(){
-  // Tenuta per compatibilità con vecchie versioni, ma ora l’accesso paziente avviene tramite codice staff.
-  showPatientCodeInfo();
+  const nick = document.getElementById('patientNickLogin').value.trim();
+  const password = document.getElementById('patientPasswordLogin').value.trim();
+  if(!nick || !password){ alert('Per registrarti inserisci nickname Minecraft e una password.'); return; }
+  let patients = getPatients();
+  if(patients.some(p => normalizeNick(p.nick) === normalizeNick(nick))){ alert('Questo paziente esiste già. Usa Accedi paziente.'); return; }
+  const existingCodes = patients.map(p => p.code);
+  const code = makeUniqueCode('SP', existingCodes);
+  const patient = {nick, password, code, createdAt:new Date().toISOString(), createdBy:'Registrazione paziente'};
+  patients.push(patient); savePatients(patients);
+  currentPatient = patient; openPatientArea();
+  alert('Registrazione completata. Il tuo codice paziente è: ' + code + '\nConservalo per il tuo profilo RP.');
 }
 function patientLogin(){
   const nick = document.getElementById('patientNickLogin').value.trim();
-  const code = document.getElementById('patientCodeLogin').value.trim().toUpperCase();
-  if(!nick || !code){ alert('Inserisci nickname Minecraft e codice personale ricevuto dallo staff.'); return; }
-  const codes = getAccessCodes();
-  const access = codes.find(c => c.code === code && (!c.usedBy || normalizeNick(c.usedBy) === normalizeNick(nick)) && normalizeNick(c.patientName) === normalizeNick(nick));
-  if(!access){ alert('Codice paziente non valido. Chiedi allo staff di generare un codice personale con il tuo nome esatto.'); return; }
-  let patients = getPatients();
-  let patient = patients.find(p => normalizeNick(p.nick) === normalizeNick(nick));
-  if(!patient){
-    patient = {nick, code, createdAt:new Date().toISOString(), accessCode:code};
-    patients.push(patient);
-  } else {
-    patient = {...patient, code, accessCode:code};
-    patients = patients.map(p => normalizeNick(p.nick) === normalizeNick(nick) ? patient : p);
-  }
-  savePatients(patients);
-  saveAccessCodes(codes.map(c => c.code === code ? {...c, usedBy:nick, usedAt:new Date().toISOString()} : c));
-  currentPatient = patient; openPatientArea(); renderPatientAccessCodes();
+  const password = document.getElementById('patientPasswordLogin').value.trim();
+  if(!nick || !password){ alert('Inserisci nickname Minecraft e password/codice SP.'); return; }
+  const patient = getPatients().find(p => normalizeNick(p.nick) === normalizeNick(nick) && (p.password === password || p.code === password.toUpperCase()));
+  if(!patient){ alert('Accesso paziente non valido. Registrati o chiedi allo staff di creare/resetare un codice SP.'); return; }
+  currentPatient = patient; openPatientArea();
 }
 function openPatientArea(){
   document.getElementById('patientLoginView').style.display = 'none';
   document.getElementById('patientAreaView').style.display = 'block';
   document.getElementById('patientWelcome').textContent = 'Benvenuto, ' + currentPatient.nick;
+  const codeLabel = document.getElementById('patientCodeLabel'); if(codeLabel) codeLabel.textContent = 'Codice paziente: ' + currentPatient.code;
   document.getElementById('mcNick').value = currentPatient.nick;
   updateNavProfile();
   renderPatientRequests();
 }
 function patientLogout(){ currentPatient = null; document.getElementById('patientAreaView').style.display='none'; document.getElementById('patientLoginView').style.display='block'; updateNavProfile(); }
+function changePatientPassword(){
+  if(!currentPatient){ alert('Devi accedere come paziente.'); return; }
+  const el=document.getElementById('patientNewPassword'); const pw=el.value.trim();
+  if(pw.length < 3){ alert('Inserisci una password di almeno 3 caratteri.'); return; }
+  const patients=getPatients().map(p => normalizeNick(p.nick)===normalizeNick(currentPatient.nick) ? {...p, password:pw} : p);
+  savePatients(patients); currentPatient={...currentPatient,password:pw}; el.value=''; alert('Password paziente modificata correttamente.');
+}
 
 function selectOption(val){ document.querySelectorAll('.option-card').forEach(c => c.classList.toggle('selected', c.dataset.val===val)); selectedType = val; document.getElementById('next1').disabled = false; }
 function goStep(step){
@@ -1186,17 +1200,33 @@ function renderPatientRequests(){
 /* ===== STAFF LOGIN + DASHBOARD ===== */
 function staffLogin(){
   const nickInput=document.getElementById('staffNick').value.trim(); const code=document.getElementById('staffCode').value.trim();
-  const user=getUsers().find(u=>normalizeNick(u.nick)===normalizeNick(nickInput) && u.code===code);
-  if(!user){ alert('Login non valido. Capo: ziofede82 / CAPO82. Staff demo: Dr_Reyes / SANTPELATUS2026'); return; }
+  const user=getUsers().find(u=>normalizeNick(u.nick)===normalizeNick(nickInput) && ((u.password||u.code)===code || u.code===code));
+  if(!user){ alert('Login non valido. Capo: ziofede82 / CAPO82. Gli staff entrano con codice SPS-xxxxx creato dal capo.'); return; }
   currentUser=user; document.querySelector('.who-name').textContent=user.nick; document.getElementById('currentRoleLabel').textContent=user.owner?'Capo ospedale · Gestione ruoli':`${user.role} · Staff Sant Pelatus`; document.querySelector('.avatar').innerHTML=`<img class="mc-head" src="${minecraftHead(user.nick)}" alt="Skin ${esc(user.nick)}">`;
   document.getElementById('staffLoginView').style.display='none'; document.getElementById('staffDashView').style.display='block'; document.getElementById('staffDashView').classList.toggle('owner-mode', !!user.owner); updateNavProfile(); renderStaffRequests(); renderStaffUsers(); renderPatientAccessCodes();
 }
 function staffLogout(){ currentUser=null; document.getElementById('staffDashView').classList.remove('owner-mode'); document.getElementById('staffDashView').style.display='none'; document.getElementById('staffLoginView').style.display='block'; updateNavProfile(); }
 function renderStaffUsers(){
   const box=document.getElementById('staffUsersList'); if(!box) return; const users=getUsers();
-  box.innerHTML=users.map(u=>`<div class="staff-user-card"><div class="meta"><div class="name">${esc(u.nick)} ${u.owner?'<span class="role-pill">CAPO</span>':''}</div><div class="role">${esc(u.role)} · codice: ${canManageStaff()?esc(u.code):'nascosto'}</div></div><div class="staff-user-actions">${canManageStaff()&&!u.owner?`<select class="status-select" onchange="changeStaffRole('${esc(u.nick)}', this.value)">${STAFF_ROLES.map(r=>`<option ${u.role===r?'selected':''}>${r}</option>`).join('')}</select><button class="mini-btn" onclick="removeStaffUser('${esc(u.nick)}')">Rimuovi</button>`:''}</div></div>`).join('');
+  box.innerHTML=users.map(u=>`<div class="staff-user-card"><div class="meta"><div class="name">${esc(u.nick)} ${u.owner?'<span class="role-pill">CAPO</span>':''}</div><div class="role">${esc(u.role)} · codice: ${canManageStaff()?esc(u.code):'nascosto'}</div></div><div class="staff-user-actions">${canManageStaff()&&!u.owner?`<select class="status-select" onchange="changeStaffRole('${esc(u.nick)}', this.value)">${STAFF_ROLES.map(r=>`<option ${u.role===r?'selected':''}>${r}</option>`).join('')}</select><button class="mini-btn" onclick="resetStaffPassword('${esc(u.nick)}')">Nuovo SPS</button><button class="mini-btn" onclick="removeStaffUser('${esc(u.nick)}')">Rimuovi</button>`:''}</div></div>`).join('');
 }
-function addStaffUser(){ if(!canManageStaff()){ alert('Solo ziofede82 può gestire i ruoli.'); return; } const nick=document.getElementById('newStaffNick').value.trim(), code=document.getElementById('newStaffCode').value.trim(), role=document.getElementById('newStaffRole').value; if(!nick||!code){ alert('Inserisci nickname e codice login.'); return; } if(normalizeNick(nick)===OWNER_NICK){ alert('Il capo ziofede82 esiste già e non si modifica.'); return; } let users=getUsers().filter(u=>normalizeNick(u.nick)!==normalizeNick(nick)); users.push({nick, code, role, owner:false}); saveUsers(users); document.getElementById('newStaffNick').value=''; document.getElementById('newStaffCode').value=''; renderStaffUsers(); }
+function addStaffUser(){
+  if(!canManageStaff()){ alert('Solo ziofede82 può gestire i ruoli.'); return; }
+  const nick=document.getElementById('newStaffNick').value.trim(), role=document.getElementById('newStaffRole').value;
+  if(!nick){ alert('Inserisci nickname Minecraft.'); return; }
+  if(normalizeNick(nick)===OWNER_NICK){ alert('Il capo ziofede82 esiste già e non si modifica.'); return; }
+  let users=getUsers().filter(u=>normalizeNick(u.nick)!==normalizeNick(nick));
+  const code=makeUniqueCode('SPS', users.map(u=>u.code));
+  users.push({nick, code, password:code, role, owner:false, createdAt:new Date().toISOString()});
+  saveUsers(users); document.getElementById('newStaffNick').value=''; renderStaffUsers();
+  alert('Staff creato/aggiornato.\nNickname: '+nick+'\nCodice staff: '+code+'\nIl codice è anche la password iniziale.');
+}
+function resetStaffPassword(nick){
+  if(!canManageStaff()) return;
+  let users=getUsers(); const code=makeUniqueCode('SPS', users.map(u=>u.code));
+  users=users.map(u=>normalizeNick(u.nick)===normalizeNick(nick)&&!u.owner?{...u,code,password:code}:u);
+  saveUsers(users); renderStaffUsers(); alert('Nuovo codice staff per '+nick+': '+code);
+}
 function changeStaffRole(nick, role){ if(!canManageStaff()) return; saveUsers(getUsers().map(u=>normalizeNick(u.nick)===normalizeNick(nick)&&!u.owner?{...u,role}:u)); renderStaffUsers(); }
 function removeStaffUser(nick){ if(!canManageStaff()) return; if(!confirm('Rimuovere questo membro staff?')) return; saveUsers(getUsers().filter(u=>normalizeNick(u.nick)!==normalizeNick(nick)||u.owner)); renderStaffUsers(); }
 function renderStaffRequests(){
@@ -1231,26 +1261,45 @@ function updateNavProfile(){
     role.textContent = currentUser ? (currentUser.owner ? 'Capo' : currentUser.role) : 'Paziente';
   }
 }
-function makePatientCode(){ return 'SP-ACCESS-' + Math.floor(100000 + Math.random()*900000); }
+function makePatientCode(){ return makeUniqueCode('SP', getPatients().map(p=>p.code)); }
 function generatePatientAccessCode(){
   if(!currentUser){ alert('Devi accedere come staff.'); return; }
   const input = document.getElementById('newPatientAccessName');
   const patientName = input.value.trim();
   if(!patientName){ alert('Inserisci il nome paziente / nickname Minecraft.'); input.focus(); return; }
-  const codes = getAccessCodes();
-  let code;
-  do { code = makePatientCode(); } while(codes.some(c => c.code === code));
-  codes.unshift({code, patientName, createdBy:currentUser.nick, createdRole:currentUser.role, createdAt:new Date().toISOString(), usedBy:null});
-  saveAccessCodes(codes);
+  let patients = getPatients();
+  let patient = patients.find(p => normalizeNick(p.nick) === normalizeNick(patientName));
+  const code = makePatientCode();
+  if(patient){
+    patient = {...patient, code, password:code, resetBy:currentUser.nick, resetAt:new Date().toISOString()};
+    patients = patients.map(p => normalizeNick(p.nick)===normalizeNick(patientName) ? patient : p);
+  } else {
+    patient = {nick:patientName, code, password:code, createdBy:currentUser.nick, createdAt:new Date().toISOString()};
+    patients.push(patient);
+  }
+  savePatients(patients);
   input.value = '';
   renderPatientAccessCodes();
-  alert('Codice creato per ' + patientName + ': ' + code + '\nPassalo al paziente per farlo accedere.');
+  alert('Accesso paziente creato.\nPaziente: ' + patientName + '\nCodice: ' + code + '\nIl paziente entra usando questo codice come password iniziale.');
+}
+function staffResetPatientPassword(){
+  if(!currentUser){ alert('Devi accedere come staff.'); return; }
+  const nick=document.getElementById('resetPatientNick').value.trim();
+  const manual=document.getElementById('resetPatientPassword').value.trim();
+  if(!nick){ alert('Inserisci il nickname del paziente.'); return; }
+  let patients=getPatients(); let patient=patients.find(p=>normalizeNick(p.nick)===normalizeNick(nick));
+  if(!patient){ alert('Paziente non trovato. Puoi crearlo dal campo “Crea accesso SP”.'); return; }
+  const newPw = manual || makePatientCode();
+  patients=patients.map(p=>normalizeNick(p.nick)===normalizeNick(nick)?{...p,password:newPw,code:manual?p.code:newPw,resetBy:currentUser.nick,resetAt:new Date().toISOString()}:p);
+  savePatients(patients);
+  document.getElementById('resetPatientNick').value=''; document.getElementById('resetPatientPassword').value='';
+  renderPatientAccessCodes(); alert('Password aggiornata per '+nick+'.\nNuova password: '+newPw);
 }
 function renderPatientAccessCodes(){
   const box=document.getElementById('patientAccessCodesList'); if(!box) return;
-  const codes=getAccessCodes();
-  if(!codes.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessun codice paziente creato</span><span class="t">staff</span></div>'; return; }
-  box.innerHTML=codes.slice(0,12).map(c=>`<div class="code-card ${c.usedBy?'used':''}"><div class="code-main"><div><div class="patient-name">${esc(c.patientName)}</div><div class="code-meta">Creato da ${esc(c.createdBy)} · ${esc(new Date(c.createdAt).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'}))}</div></div><div class="patient-code">${esc(c.code)}</div></div><div class="code-meta">${c.usedBy?'Usato da '+esc(c.usedBy):'Non ancora usato'}</div></div>`).join('');
+  const patients=getPatients();
+  if(!patients.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessun paziente registrato</span><span class="t">SP</span></div>'; return; }
+  box.innerHTML=patients.slice().reverse().slice(0,12).map(p=>`<div class="code-card"><div class="code-main"><div><div class="patient-name">${esc(p.nick)}</div><div class="code-meta">Creato da ${esc(p.createdBy||'Paziente')} · ${p.createdAt?esc(new Date(p.createdAt).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})):'data non disponibile'}</div></div><div class="patient-code">${esc(p.code)}</div></div><div class="code-meta">Password attuale: ${canManageStaff()?esc(p.password||p.code):'nascosta'}${p.resetBy?' · modificata da '+esc(p.resetBy):''}</div></div>`).join('');
 }
 function triggerEmergency(){ const toast=document.getElementById('emergencyToast'); toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),3800); }
 document.getElementById('burgerBtn').addEventListener('click', () => { document.getElementById('aree').scrollIntoView({behavior:'smooth'}); });
