@@ -563,6 +563,21 @@ header.scrolled .nav-profile{background:#fff;color:var(--navy-950);border-color:
 .nav-profile-name{font-weight:800;font-size:13.5px;}
 .nav-profile-role{font-family:var(--ff-mono);font-size:10px;color:var(--mint-300);text-transform:uppercase;letter-spacing:.05em;margin-top:3px;}
 header.scrolled .nav-profile-role{color:var(--sky-500);}
+
+.clinical-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-top:12px;}
+.clinical-card .clinical-title{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px;}
+.clinical-card .clinical-title h4{color:#fff;font-size:15px;line-height:1.25;}
+.clinical-card .clinical-meta{font-size:12px;color:rgba(255,255,255,.52);font-family:var(--ff-mono);margin-top:3px;}
+.clinical-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.clinical-detail{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:18px;margin-top:16px;}
+.clinical-detail h4{color:#fff;font-size:18px;margin-bottom:4px;}
+.clinical-detail .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;}
+.detail-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px 12px;}
+.detail-item .k{display:block;color:rgba(255,255,255,.42);font-family:var(--ff-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;}
+.detail-item .v{display:block;color:#fff;font-weight:600;font-size:13.5px;margin-top:3px;}
+.patient-reply{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);}
+.patient-reply textarea{width:100%;min-height:70px;border:1.5px solid var(--line-strong);border-radius:12px;padding:12px;font-family:inherit;resize:vertical;background:#fbfdff;}
+
 .nav-cta.logged .staff-access-btn{display:none;}
 .code-card{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);border-radius:12px;padding:12px;margin-bottom:10px;}
 .code-card .code-main{display:flex;justify-content:space-between;gap:10px;align-items:center;}
@@ -923,12 +938,12 @@ header.scrolled .nav-profile-role{color:var(--sky-500);}
           </div>
           <div class="dash-grid">
             <div class="dash-col">
-              <h5>Pazienti RP assegnati</h5>
+              <h5>Cartelle cliniche pazienti</h5>
 <div id="staffRequests"></div>
+<div id="staffClinicalDetail"></div>
 
               <h5 style="margin-top:24px;">Calendario interventi RP</h5>
-              <div class="shift-row"><span class="n">Appendicectomia RP — T. Reign</span><span class="t">15:30</span></div>
-              <div class="shift-row"><span class="n">Sutura RP — E. Vance</span><span class="t">17:00</span></div>
+              <div id="surgeryCalendar"></div>
             </div>
             <div class="dash-col">
               <h5>Staff e ruoli</h5>
@@ -1189,12 +1204,22 @@ function lookupTicket(){
   box.innerHTML = renderRequestLight(req);
 }
 function renderMessages(req){ return `<div class="message-thread">${(req.messages||[]).map(m=>`<div class="msg ${m.role==='Paziente'?'patient':'staff'}"><div class="by">${esc(m.by)} · ${esc(m.role)} · ${esc(m.at||'')}</div>${esc(m.text)}</div>`).join('') || '<div class="msg staff"><div class="by">Sistema</div>Nessun messaggio ancora.</div>'}</div>`; }
-function renderRequestLight(req){ return `<div class="request-card-light"><h4>${esc(req.code)} · ${esc(typeLabel(req.type))}</h4><p>Personaggio: <b>${esc(req.character)}</b> · Reparto: ${esc(req.department)} · Stato: ${statusBadge(req.status)}</p><p>${esc(req.description || 'Nessuna descrizione.')}</p>${renderMessages(req)}</div>`; }
+function renderRequestLight(req){
+  const canReply = currentPatient && normalizeNick(req.patientNick||req.nick)===normalizeNick(currentPatient.nick) && req.status !== 'Completata';
+  return `<div class="request-card-light"><h4>${esc(req.code)} · ${esc(typeLabel(req.type))}</h4><p>Cartella clinica: <b>${esc(req.character)}</b> · Nick: <b>${esc(req.nick||req.patientNick)}</b></p><p>Reparto: ${esc(req.department)} · Stato: ${statusBadge(req.status)}</p><p>${esc(req.description || 'Nessuna descrizione.')}</p>${renderMessages(req)}${canReply?`<div class="patient-reply"><textarea id="patientReply-${esc(req.code)}" placeholder="Scrivi una risposta allo staff medico..."></textarea><button class="btn btn-dark btn-sm" style="margin-top:8px;" onclick="sendPatientReply('${esc(req.code)}')">Invia messaggio allo staff</button></div>`:''}</div>`;
+}
 function renderPatientRequests(){
   const box=document.getElementById('patientRequestsList'); if(!box) return;
   if(!currentPatient){ box.innerHTML='<div class="notice">Accedi per vedere le tue richieste.</div>'; return; }
   const mine=getRequests().filter(r=>normalizeNick(r.patientNick||r.nick)===normalizeNick(currentPatient.nick));
   box.innerHTML = mine.length ? mine.map(renderRequestLight).join('') : '<div class="notice">Non hai ancora inviato richieste.</div>';
+}
+function sendPatientReply(code){
+  if(!currentPatient){ alert('Devi accedere come paziente.'); return; }
+  const el=document.getElementById('patientReply-'+code); const text=el?el.value.trim():'';
+  if(!text){ alert('Scrivi un messaggio prima di inviare.'); return; }
+  const list=getRequests().map(r=>r.code===code && normalizeNick(r.patientNick||r.nick)===normalizeNick(currentPatient.nick) ? {...r,messages:[...(r.messages||[]),{by:currentPatient.nick,role:'Paziente',text,at:nowIT()}]} : r);
+  saveRequests(list); renderPatientRequests(); renderStaffRequests(); openClinicalRecord(code, false);
 }
 
 /* ===== STAFF LOGIN + DASHBOARD ===== */
@@ -1203,7 +1228,7 @@ function staffLogin(){
   const user=getUsers().find(u=>normalizeNick(u.nick)===normalizeNick(nickInput) && ((u.password||u.code)===code || u.code===code));
   if(!user){ alert('Login non valido. Capo: ziofede82 / CAPO82. Gli staff entrano con codice SPS-xxxxx creato dal capo.'); return; }
   currentUser=user; document.querySelector('.who-name').textContent=user.nick; document.getElementById('currentRoleLabel').textContent=user.owner?'Capo ospedale · Gestione ruoli':`${user.role} · Staff Sant Pelatus`; document.querySelector('.avatar').innerHTML=`<img class="mc-head" src="${minecraftHead(user.nick)}" alt="Skin ${esc(user.nick)}">`;
-  document.getElementById('staffLoginView').style.display='none'; document.getElementById('staffDashView').style.display='block'; document.getElementById('staffDashView').classList.toggle('owner-mode', !!user.owner); updateNavProfile(); renderStaffRequests(); renderStaffUsers(); renderPatientAccessCodes();
+  document.getElementById('staffLoginView').style.display='none'; document.getElementById('staffDashView').style.display='block'; document.getElementById('staffDashView').classList.toggle('owner-mode', !!user.owner); updateNavProfile(); renderStaffRequests(); renderStaffUsers(); renderPatientAccessCodes(); renderSurgeryCalendar();
 }
 function staffLogout(){ currentUser=null; document.getElementById('staffDashView').classList.remove('owner-mode'); document.getElementById('staffDashView').style.display='none'; document.getElementById('staffLoginView').style.display='block'; updateNavProfile(); }
 function renderStaffUsers(){
@@ -1231,17 +1256,49 @@ function changeStaffRole(nick, role){ if(!canManageStaff()) return; saveUsers(ge
 function removeStaffUser(nick){ if(!canManageStaff()) return; if(!confirm('Rimuovere questo membro staff?')) return; saveUsers(getUsers().filter(u=>normalizeNick(u.nick)!==normalizeNick(nick)||u.owner)); renderStaffUsers(); }
 function renderStaffRequests(){
   const box=document.getElementById('staffRequests'); if(!box) return; const list=getRequests();
-  if(!list.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessuna richiesta ricevuta</span><span class="t">live</span></div>'; return; }
-  box.innerHTML=list.map(r=>`<div class="staff-request-card"><div class="top"><div style="display:flex;align-items:center;gap:10px;min-width:0;"><span class="priority-dot ${priorityClass(r.type)}"></span><div><div class="pname">${esc(r.character)} <span class="code">${esc(r.code)}</span></div><div class="proom">${esc(typeLabel(r.type))} · ${esc(r.department)} · paziente ${esc(r.patientNick||r.nick)}</div></div></div><select class="status-select" onchange="updateRequestStatus('${esc(r.code)}', this.value)">${['In attesa','Urgente','In cura','Completata'].map(s=>`<option ${r.status===s?'selected':''}>${s}</option>`).join('')}</select></div><div class="desc">${esc(r.description || 'Nessuna descrizione inserita.')}</div>${renderStaffMessages(r)}<div class="reply-box"><textarea id="reply-${esc(r.code)}" placeholder="Scrivi risposta professionale al paziente..."></textarea><button class="btn btn-primary btn-sm" onclick="sendStaffReply('${esc(r.code)}')">Invia risposta al paziente</button></div></div>`).join('');
+  if(!list.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessuna cartella clinica ricevuta</span><span class="t">live</span></div>'; renderSurgeryCalendar(); return; }
+  box.innerHTML=list.map(r=>`<div class="clinical-card"><div class="clinical-title"><div><h4>Cartella clinica · ${esc(r.character || r.patientNick || 'Paziente')}</h4><div class="clinical-meta">${esc(r.code)} · ${esc(typeLabel(r.type))} · Nick ${esc(r.nick||r.patientNick)}</div></div>${statusBadge(r.status)}</div><div class="clinical-meta">Reparto: ${esc(r.department)} · Creata: ${r.createdAt?esc(new Date(r.createdAt).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})):''}</div><div class="desc">${esc(r.description || 'Nessuna descrizione inserita.')}</div><div class="clinical-actions"><button class="mini-btn" onclick="openClinicalRecord('${esc(r.code)}')">Apri cartella</button><button class="mini-btn" onclick="acceptRequest('${esc(r.code)}')">Accetta</button><button class="mini-btn" onclick="completeRequest('${esc(r.code)}')">Chiudi</button></div></div>`).join('');
+  renderSurgeryCalendar();
+}
+function renderSurgeryCalendar(){
+  const box=document.getElementById('surgeryCalendar'); if(!box) return;
+  const surgeries=getRequests().filter(r=>r.type==='chirurgia' || String(r.department||'').toLowerCase().includes('chirurgia'));
+  if(!surgeries.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessun intervento RP programmato dalle richieste</span><span class="t">live</span></div>'; return; }
+  box.innerHTML=surgeries.slice(0,8).map(r=>`<div class="shift-row" onclick="openClinicalRecord('${esc(r.code)}')" style="cursor:pointer;"><span class="n">${esc(r.character)} — ${esc(typeLabel(r.type))}</span><span class="t">${esc(r.status)}</span></div>`).join('');
+}
+function openClinicalRecord(code, scroll=true){
+  if(!currentUser) return;
+  const r=getRequests().find(x=>x.code===code); const box=document.getElementById('staffClinicalDetail');
+  if(!box || !r) return;
+  const patient=getPatients().find(p=>normalizeNick(p.nick)===normalizeNick(r.patientNick||r.nick));
+  box.innerHTML=`<div class="clinical-detail"><h4>Cartella clinica del paziente</h4><div class="clinical-meta">${esc(r.code)} · ${esc(typeLabel(r.type))}</div><div class="detail-grid"><div class="detail-item"><span class="k">Nome paziente</span><span class="v">${esc(r.character||'Non indicato')}</span></div><div class="detail-item"><span class="k">Nick Minecraft</span><span class="v">${esc(r.nick||r.patientNick)}</span></div><div class="detail-item"><span class="k">Codice SP</span><span class="v">${esc(patient?patient.code:'Non collegato')}</span></div><div class="detail-item"><span class="k">Reparto</span><span class="v">${esc(r.department)}</span></div><div class="detail-item"><span class="k">Stato pratica</span><span class="v">${esc(r.status)}</span></div><div class="detail-item"><span class="k">Aperta il</span><span class="v">${r.createdAt?esc(new Date(r.createdAt).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})):'—'}</span></div></div><div class="detail-item" style="margin-bottom:12px;"><span class="k">Descrizione RP</span><span class="v">${esc(r.description||'Nessuna descrizione.')}</span></div>${renderStaffMessages(r)}<div class="reply-box"><select class="status-select" id="detailStatus-${esc(r.code)}">${['In attesa','Accettata','Urgente','In cura','Completata','Rifiutata'].map(s=>`<option ${r.status===s?'selected':''}>${s}</option>`).join('')}</select><textarea id="detailReply-${esc(r.code)}" placeholder="Scrivi risposta professionale al paziente. Esempio: richiesta accettata, presentati in ospedale, reparto assegnato..."></textarea><div class="clinical-actions"><button class="btn btn-mint btn-sm" onclick="saveClinicalRecord('${esc(r.code)}')">Salva stato e risposta</button><button class="btn btn-primary btn-sm" onclick="acceptRequest('${esc(r.code)}')">Accetta richiesta</button><button class="btn btn-outline btn-sm" onclick="completeRequest('${esc(r.code)}')">Chiudi pratica</button></div></div></div>`;
+  if(scroll) box.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 function renderStaffMessages(req){ return `<div class="message-thread" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);">${(req.messages||[]).map(m=>`<div class="msg ${m.role==='Paziente'?'patient':'staff'}"><div class="by">${esc(m.by)} · ${esc(m.role)} · ${esc(m.at||'')}</div>${esc(m.text)}</div>`).join('')}</div>`; }
-function updateRequestStatus(code,status){ const list=getRequests().map(r=>r.code===code?{...r,status}:r); saveRequests(list); renderStaffRequests(); renderPatientRequests(); }
+function updateRequestStatus(code,status){ const list=getRequests().map(r=>r.code===code?{...r,status}:r); saveRequests(list); renderStaffRequests(); renderPatientRequests(); openClinicalRecord(code, false); }
+function acceptRequest(code){
+  if(!currentUser){ alert('Devi accedere come staff.'); return; }
+  const list=getRequests().map(r=>r.code===code?{...r,status:'Accettata',messages:[...(r.messages||[]),{by:currentUser.nick,role:currentUser.role,text:'Richiesta accettata. Presentati al Sant Pelatus e comunica il codice ticket al banco accettazione.',at:nowIT()}]}:r);
+  saveRequests(list); renderStaffRequests(); renderPatientRequests(); openClinicalRecord(code, false);
+}
+function completeRequest(code){ updateRequestStatus(code,'Completata'); }
+function saveClinicalRecord(code){
+  if(!currentUser){ alert('Devi accedere come staff.'); return; }
+  const statusEl=document.getElementById('detailStatus-'+code); const replyEl=document.getElementById('detailReply-'+code);
+  const status=statusEl?statusEl.value:'In cura'; const text=replyEl?replyEl.value.trim():'';
+  const list=getRequests().map(r=>{
+    if(r.code!==code) return r;
+    const messages=text?[...(r.messages||[]),{by:currentUser.nick,role:currentUser.role,text,at:nowIT()}]:(r.messages||[]);
+    return {...r,status,messages};
+  });
+  saveRequests(list); renderStaffRequests(); renderPatientRequests(); openClinicalRecord(code, false);
+}
 function sendStaffReply(code){
   if(!currentUser){ alert('Devi accedere come staff.'); return; }
-  const el=document.getElementById('reply-'+code); const text=el ? el.value.trim() : '';
+  const el=document.getElementById('reply-'+code) || document.getElementById('detailReply-'+code); const text=el ? el.value.trim() : '';
   if(!text){ alert('Scrivi una risposta prima di inviare.'); return; }
   const list=getRequests().map(r=>r.code===code?{...r,status:r.status==='In attesa'?'In cura':r.status,messages:[...(r.messages||[]),{by:currentUser.nick,role:currentUser.role,text,at:nowIT()}]}:r);
-  saveRequests(list); renderStaffRequests(); renderPatientRequests();
+  saveRequests(list); renderStaffRequests(); renderPatientRequests(); openClinicalRecord(code, false);
 }
 function minecraftHead(nick){ return 'https://mc-heads.net/avatar/' + encodeURIComponent(nick || 'Steve') + '/64'; }
 function updateNavProfile(){
