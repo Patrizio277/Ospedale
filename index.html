@@ -486,6 +486,27 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
 .toast h6{font-size:13.5px; font-weight:600;}
 .toast p{font-size:12px; color:rgba(255,255,255,0.55); margin-top:2px;}
 
+
+.status-select{background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:6px 8px; font-family:var(--ff-mono); font-size:11.5px;}
+.notice{padding:12px 14px; border-radius:10px; background:rgba(47,143,255,0.08); border:1px solid var(--line); font-size:13.5px; color:#42597a;}
+.notice strong{color:var(--navy-950);}
+
+.staff-admin-panel{margin-top:24px; padding-top:22px; border-top:1px solid rgba(255,255,255,0.08);}
+.admin-form{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;}
+.admin-form input,.admin-form select{background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:10px 12px; font-family:inherit; font-size:13.5px;}
+.admin-form select option,.status-select option{color:#0b1b2c;}
+.staff-user-card{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06);}
+.staff-user-card:last-child{border-bottom:none;}
+.staff-user-card .meta{min-width:0;}
+.staff-user-card .name{color:#fff; font-weight:600; font-size:13.5px;}
+.staff-user-card .role{color:rgba(255,255,255,0.45); font-family:var(--ff-mono); font-size:11.5px;}
+.staff-user-actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+.role-pill{display:inline-flex; align-items:center; padding:4px 9px; border-radius:999px; font-family:var(--ff-mono); font-size:10.5px; font-weight:700; background:rgba(52,217,168,0.14); color:var(--mint-300); margin-left:6px;}
+.owner-only{display:none;}
+.owner-mode .owner-only{display:block;}
+.owner-mode .owner-only-inline{display:inline-flex;}
+.owner-only-inline{display:none;}
+
 /* ============ RESPONSIVE ============ */
 @media (max-width:980px){
   .hero-inner{grid-template-columns:1fr; gap:50px;}
@@ -507,6 +528,31 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
   .footer-grid{grid-template-columns:1fr;}
   .hero-actions .btn{flex:1;}
 }
+
+
+/* ============ AUTH + MESSAGGI FUNZIONALI ============ */
+.auth-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);padding:34px;box-shadow:var(--shadow-sm);margin-bottom:22px;}
+.auth-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.patient-session-bar{display:flex;justify-content:space-between;align-items:center;gap:14px;background:linear-gradient(120deg,var(--navy-950),var(--navy-800));color:#fff;border-radius:16px;padding:16px 18px;margin-bottom:22px;}
+.patient-session-bar strong{font-family:var(--ff-display);font-size:17px;}
+.patient-session-bar span{display:block;color:rgba(255,255,255,.58);font-family:var(--ff-mono);font-size:11.5px;margin-top:2px;}
+.message-thread{background:#f7fbff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;max-height:220px;overflow:auto;}
+.msg{padding:10px 12px;border-radius:10px;margin-bottom:8px;font-size:13px;line-height:1.4;}
+.msg.staff{background:rgba(47,143,255,.10);border:1px solid rgba(47,143,255,.16);}
+.msg.patient{background:#fff;border:1px solid var(--line);}
+.msg .by{font-family:var(--ff-mono);font-size:10.5px;color:#6d82a0;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.request-card-light{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:12px;box-shadow:var(--shadow-sm);}
+.request-card-light h4{font-size:15px;margin-bottom:6px;}
+.request-card-light p{font-size:13px;color:#5a7191;margin-top:4px;}
+.reply-box{margin-top:10px;display:grid;gap:8px;}
+.reply-box textarea{width:100%;min-height:70px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;padding:10px;font-family:inherit;resize:vertical;}
+.staff-request-card{border-bottom:1px solid rgba(255,255,255,.08);padding:14px 0;}
+.staff-request-card:last-child{border-bottom:none;}
+.staff-request-card .top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+.staff-request-card .desc{font-size:12.5px;color:rgba(255,255,255,.55);margin-top:7px;}
+.staff-request-card .code{font-family:var(--ff-mono);font-size:11px;color:var(--mint-300);}
+.auth-note{font-size:12.5px;color:#6d82a0;margin-top:10px;}
+
 </style>
 </head>
 <body>
@@ -675,6 +721,26 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
       <div class="split">
         <!-- Form -->
         <div class="card-panel reveal">
+          <div id="patientLoginView" class="auth-card" style="padding:0; box-shadow:none; border:none; margin:0;">
+            <h3 style="margin-bottom:8px; font-size:20px;">Accesso Area Pazienti</h3>
+            <p style="color:#5a7191; font-size:14.5px; margin-bottom:18px;">Accedi prima di prenotare visite, emergenze, chirurgie o ticket. Dopo l'invio potrai vedere le risposte dei medici.</p>
+            <div class="row2">
+              <div class="field"><label>Nickname Minecraft</label><input id="patientNickLogin" type="text" placeholder="Es. ziofede82"></div>
+              <div class="field"><label>Codice personale</label><input id="patientCodeLogin" type="password" placeholder="Scegli o inserisci un codice"></div>
+            </div>
+            <div class="auth-actions">
+              <button class="btn btn-mint" onclick="patientLogin()">Accedi paziente →</button>
+              <button class="btn btn-outline" onclick="patientRegister()">Crea accesso paziente</button>
+            </div>
+            <p class="auth-note">Il codice serve per rientrare e controllare le risposte. Demo compatibile con GitHub Pages.</p>
+          </div>
+
+          <div id="patientAreaView" style="display:none;">
+            <div class="patient-session-bar">
+              <div><strong id="patientWelcome">Area Paziente</strong><span>Richieste e risposte mediche RP</span></div>
+              <button class="mini-btn" onclick="patientLogout()">Esci</button>
+            </div>
+
           <div class="stepper">
             <div class="step-dot active" id="dot1">1</div>
             <div class="step-line" id="line1"></div>
@@ -708,11 +774,11 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
 
             <div class="form-step" data-step="2">
               <h3 style="margin-bottom:18px; font-size:19px;">Dati del tuo personaggio</h3>
-              <div class="field"><label>Nome personaggio RP</label><input type="text" placeholder="Es. Marek Holloway" required></div>
+              <div class="field"><label>Nome personaggio RP</label><input id="charName" type="text" placeholder="Es. Marek Holloway" required></div>
               <div class="row2">
-                <div class="field"><label>Nickname Minecraft</label><input type="text" placeholder="Es. _Marek_" required></div>
+                <div class="field"><label>Nickname Minecraft</label><input id="mcNick" type="text" placeholder="Es. _Marek_" required></div>
                 <div class="field"><label>Reparto richiesto</label>
-                  <select required>
+                  <select id="department" required>
                     <option value="">Seleziona reparto</option>
                     <option>Pronto Soccorso</option>
                     <option>Chirurgia RP</option>
@@ -721,7 +787,7 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
                   </select>
                 </div>
               </div>
-              <div class="field"><label>Descrivi la situazione RP</label><textarea placeholder="Es. Ferita da caduta durante una rissa in città..."></textarea></div>
+              <div class="field"><label>Descrivi la situazione RP</label><textarea id="description" placeholder="Es. Ferita da caduta durante una rissa in città..."></textarea></div>
               <div class="form-nav">
                 <button class="btn btn-outline" onclick="goStep(1)">← Indietro</button>
                 <button class="btn btn-primary" onclick="goStep(3)">Continua →</button>
@@ -748,6 +814,21 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
             <p style="color:#5a7191; margin-top:8px; font-size:14.5px;">Presentati in game al banco accettazione del Sant Pelatus con questo codice.</p>
             <div class="ticket-code" id="ticketCode">SP-RP-0000</div>
             <div style="margin-top:24px;"><button class="btn btn-outline btn-sm" onclick="resetForm()">Nuova richiesta</button></div>
+          </div>
+
+          <div style="margin-top:26px; padding-top:22px; border-top:1px solid var(--line);">
+            <h3 style="margin-bottom:10px; font-size:17px;">Controlla stato richiesta</h3>
+            <div class="row2">
+              <div class="field" style="margin-bottom:0;"><label>Codice ticket</label><input id="lookupCode" type="text" placeholder="SP-RP-0000"></div>
+              <div style="display:flex; align-items:flex-end;"><button class="btn btn-dark btn-block" onclick="lookupTicket()">Cerca</button></div>
+            </div>
+            <div id="lookupResult" style="margin-top:14px;"></div>
+          </div>
+
+          <div style="margin-top:26px; padding-top:22px; border-top:1px solid var(--line);">
+            <h3 style="margin-bottom:10px; font-size:17px;">Le tue richieste e risposte</h3>
+            <div id="patientRequestsList"></div>
+          </div>
           </div>
         </div>
 
@@ -794,11 +875,11 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 3l8 4v5c0 5-3.4 8.4-8 9-4.6-.6-8-4-8-9V7l8-4z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
             </div>
             <h3>Accesso Staff Medico</h3>
-            <p>Solo per staff whitelisted del server Sant Pelatus RP</p>
-            <div class="field" style="text-align:left;"><label>Nickname Minecraft</label><input type="text" placeholder="Es. Dr_Reyes"></div>
-            <div class="field" style="text-align:left;"><label>Codice accesso staff</label><input type="password" placeholder="••••••••"></div>
+            <p>Accesso staff con ruoli. Il capo è ziofede82.</p>
+            <div class="field" style="text-align:left;"><label>Nickname Minecraft</label><input id="staffNick" type="text" placeholder="Es. Dr_Reyes"></div>
+            <div class="field" style="text-align:left;"><label>Codice accesso staff</label><input id="staffCode" type="password" placeholder="••••••••"></div>
             <button class="btn btn-mint btn-block" onclick="staffLogin()">Entra in Dashboard →</button>
-            <p style="margin-top:18px; font-size:12px;">Accesso dimostrativo — nessun dato reale richiesto</p>
+            <p style="margin-top:18px; font-size:12px;">Capo: nickname <b>ziofede82</b> · codice <b>CAPO82</b>. Staff demo: codice <b>SANTPELATUS2026</b></p>
           </div>
         </div>
 
@@ -806,26 +887,40 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
           <div class="dash-topbar">
             <div class="who">
               <div class="avatar">AR</div>
-              <div><div class="who-name">Dr. A. Reyes</div><div class="who-role">Chirurgo RP · Turno Diurno</div></div>
+              <div><div class="who-name">Dr. A. Reyes</div><div class="who-role" id="currentRoleLabel">Chirurgo RP · Turno Diurno</div></div>
             </div>
             <button class="mini-btn" onclick="staffLogout()">Esci</button>
           </div>
           <div class="dash-grid">
             <div class="dash-col">
               <h5>Pazienti RP assegnati</h5>
-              <div class="patient-row"><div style="display:flex; align-items:center; gap:10px;"><span class="priority-dot high"></span><div><div class="pname">Marek Holloway</div><div class="proom">Sala 2 · Trauma da caduta</div></div></div><span class="mini-btn">Apri</span></div>
-              <div class="patient-row"><div style="display:flex; align-items:center; gap:10px;"><span class="priority-dot mid"></span><div><div class="pname">Eliza Vance</div><div class="proom">Sala 4 · Visita generale</div></div></div><span class="mini-btn">Apri</span></div>
-              <div class="patient-row"><div style="display:flex; align-items:center; gap:10px;"><span class="priority-dot low"></span><div><div class="pname">Tomas Reign</div><div class="proom">Attesa · Check-up RP</div></div></div><span class="mini-btn">Apri</span></div>
+<div id="staffRequests"></div>
 
               <h5 style="margin-top:24px;">Calendario interventi RP</h5>
               <div class="shift-row"><span class="n">Appendicectomia RP — T. Reign</span><span class="t">15:30</span></div>
               <div class="shift-row"><span class="n">Sutura RP — E. Vance</span><span class="t">17:00</span></div>
             </div>
             <div class="dash-col">
-              <h5>Turni RP di oggi</h5>
-              <div class="shift-row"><span class="n">Dr. A. Reyes</span><span class="t">08:00–16:00</span></div>
-              <div class="shift-row"><span class="n">Inf. K. Soto</span><span class="t">08:00–14:00</span></div>
-              <div class="shift-row"><span class="n">Dr. M. Lang</span><span class="t">16:00–00:00</span></div>
+              <h5>Staff e ruoli</h5>
+              <div id="staffUsersList"></div>
+
+              <div class="staff-admin-panel owner-only" id="ownerAdminPanel">
+                <h5>Gestione capo · assegna ruoli</h5>
+                <div class="admin-form">
+                  <input id="newStaffNick" type="text" placeholder="Nickname Minecraft">
+                  <input id="newStaffCode" type="text" placeholder="Codice login">
+                  <select id="newStaffRole">
+                    <option>Infermiere</option>
+                    <option>Dottore</option>
+                    <option>Medico</option>
+                    <option>Chirurgo</option>
+                    <option>Primario</option>
+                    <option>Direttore sanitario</option>
+                  </select>
+                  <button class="btn btn-mint btn-block" onclick="addStaffUser()">Aggiungi / aggiorna</button>
+                </div>
+                <p style="color:rgba(255,255,255,0.45); font-size:12px;">Solo ziofede82 vede questo pannello.</p>
+              </div>
 
               <h5 style="margin-top:24px;">Comunicazioni staff</h5>
               <div class="shift-row"><span class="n">⚠️ Maxi-emergenza zona Est</span><span class="t">ora</span></div>
@@ -903,9 +998,46 @@ footer{background:var(--navy-950); padding:80px 0 30px; margin-top:120px;}
 </div>
 
 <script>
+/* ===== DATABASE LOCALE: funziona su GitHub Pages senza backend ===== */
+const DB_KEY = 'santPelatusRequestsV3';
+const USERS_KEY = 'santPelatusStaffUsersV3';
+const PATIENTS_KEY = 'santPelatusPatientsV1';
+const DEFAULT_STAFF_CODE = 'SANTPELATUS2026';
+const OWNER_NICK = 'ziofede82';
+const OWNER_CODE = 'CAPO82';
+let selectedType = null;
+let currentUser = null;
+let currentPatient = null;
+
+function esc(str=''){ return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function normalizeNick(nick){ return String(nick||'').trim().toLowerCase(); }
+function nowIT(){ return new Date().toLocaleString('it-IT', {dateStyle:'short', timeStyle:'short'}); }
+function getRequests(){ try { return JSON.parse(localStorage.getItem(DB_KEY)) || []; } catch(e){ return []; } }
+function saveRequests(list){ localStorage.setItem(DB_KEY, JSON.stringify(list)); }
+function getPatients(){ try { return JSON.parse(localStorage.getItem(PATIENTS_KEY)) || []; } catch(e){ return []; } }
+function savePatients(list){ localStorage.setItem(PATIENTS_KEY, JSON.stringify(list)); }
+function defaultUsers(){ return [
+  {nick: OWNER_NICK, code: OWNER_CODE, role:'Capo ospedale', owner:true},
+  {nick:'Dr_Reyes', code: DEFAULT_STAFF_CODE, role:'Chirurgo', owner:false},
+  {nick:'K_Soto', code:'INF123', role:'Infermiere', owner:false},
+  {nick:'M_Lang', code:'MED123', role:'Medico', owner:false}
+]; }
+function ensureOwner(users){
+  const exists = users.some(u => normalizeNick(u.nick) === OWNER_NICK);
+  const list = exists ? users : [defaultUsers()[0], ...users];
+  return list.map(u => normalizeNick(u.nick) === OWNER_NICK ? {...u, code:OWNER_CODE, role:'Capo ospedale', owner:true} : u);
+}
+function getUsers(){ try { const saved = JSON.parse(localStorage.getItem(USERS_KEY)); if(Array.isArray(saved) && saved.length) return ensureOwner(saved); } catch(e){} const users=defaultUsers(); saveUsers(users); return users; }
+function saveUsers(users){ localStorage.setItem(USERS_KEY, JSON.stringify(ensureOwner(users))); }
+function canManageStaff(){ return currentUser && currentUser.owner; }
+function typeLabel(type){ return {prenotazione:'Prenotazione visita RP', emergenza:'Richiesta emergenza RP', chirurgia:'Chirurgia RP', ticket:'Ticket assistenza'}[type] || 'Richiesta RP'; }
+function priorityClass(type){ return type === 'emergenza' ? 'high' : type === 'chirurgia' ? 'mid' : 'low'; }
+function statusBadge(status){ const cls = status === 'Completata' ? 'green' : status === 'In cura' ? 'blue' : 'amber'; return `<span class="badge ${cls}">${esc(status)}</span>`; }
+
 /* ===== LOADER ===== */
 window.addEventListener('load', () => {
   setTimeout(() => document.getElementById('loader').classList.add('hidden'), 900);
+  getUsers(); renderStaffRequests(); renderStaffUsers(); renderPatientRequests();
 });
 
 /* ===== NAVBAR SCROLL ===== */
@@ -917,34 +1049,13 @@ window.addEventListener('scroll', () => {
 
 /* ===== REVEAL ON SCROLL ===== */
 const revealEls = document.querySelectorAll('.reveal');
-const io = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
-}, { threshold: 0.15 });
+const io = new IntersectionObserver((entries) => { entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { threshold: 0.15 });
 revealEls.forEach(el => io.observe(el));
 
 /* ===== COUNTER ANIMATION ===== */
 const counters = document.querySelectorAll('.stat-num');
 const counterIO = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      const el = e.target;
-      const target = parseInt(el.dataset.count, 10);
-      const suffixEl = el.querySelector('.suffix');
-      const suffixHTML = suffixEl ? suffixEl.outerHTML : '';
-      let cur = 0;
-      const dur = 1600;
-      const start = performance.now();
-      function tick(now){
-        const p = Math.min((now-start)/dur, 1);
-        const eased = 1 - Math.pow(1-p, 3);
-        cur = Math.floor(eased * target);
-        el.innerHTML = cur.toLocaleString('it-IT') + suffixHTML;
-        if (p < 1) requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-      counterIO.unobserve(el);
-    }
-  });
+  entries.forEach(e => { if (e.isIntersecting) { const el=e.target, target=parseInt(el.dataset.count,10), suffixEl=el.querySelector('.suffix'), suffixHTML=suffixEl?suffixEl.outerHTML:''; let cur=0; const dur=1600, start=performance.now(); function tick(now){ const p=Math.min((now-start)/dur,1), eased=1-Math.pow(1-p,3); cur=Math.floor(eased*target); el.innerHTML=cur.toLocaleString('it-IT')+suffixHTML; if(p<1) requestAnimationFrame(tick); } requestAnimationFrame(tick); counterIO.unobserve(el); } });
 }, { threshold: 0.4 });
 counters.forEach(c => counterIO.observe(c));
 
@@ -955,64 +1066,107 @@ function goToArea(area){
   document.getElementById('panelStaff').classList.toggle('active', area==='staff');
   document.getElementById('btnPazienti').classList.toggle('active', area==='pazienti');
   document.getElementById('btnStaff').classList.toggle('active', area==='staff');
+  if(area === 'staff') renderStaffRequests();
+  if(area === 'pazienti') renderPatientRequests();
 }
 
-/* ===== BOOKING FORM ===== */
-let selectedType = null;
-function selectOption(val){
-  document.querySelectorAll('.option-card').forEach(c => c.classList.toggle('selected', c.dataset.val===val));
-  selectedType = val;
-  document.getElementById('next1').disabled = false;
+/* ===== LOGIN PAZIENTI ===== */
+function patientRegister(){
+  const nick = document.getElementById('patientNickLogin').value.trim();
+  const code = document.getElementById('patientCodeLogin').value.trim();
+  if(!nick || !code){ alert('Inserisci nickname Minecraft e codice personale.'); return; }
+  const patients = getPatients();
+  if(patients.some(p => normalizeNick(p.nick) === normalizeNick(nick))){ alert('Questo paziente esiste già: usa Accedi paziente.'); return; }
+  const patient = {nick, code, createdAt:new Date().toISOString()};
+  patients.push(patient); savePatients(patients); currentPatient = patient; openPatientArea();
 }
+function patientLogin(){
+  const nick = document.getElementById('patientNickLogin').value.trim();
+  const code = document.getElementById('patientCodeLogin').value.trim();
+  const patient = getPatients().find(p => normalizeNick(p.nick) === normalizeNick(nick) && p.code === code);
+  if(!patient){ alert('Accesso paziente non valido. Se è la prima volta, clicca “Crea accesso paziente”.'); return; }
+  currentPatient = patient; openPatientArea();
+}
+function openPatientArea(){
+  document.getElementById('patientLoginView').style.display = 'none';
+  document.getElementById('patientAreaView').style.display = 'block';
+  document.getElementById('patientWelcome').textContent = 'Benvenuto, ' + currentPatient.nick;
+  document.getElementById('mcNick').value = currentPatient.nick;
+  renderPatientRequests();
+}
+function patientLogout(){ currentPatient = null; document.getElementById('patientAreaView').style.display='none'; document.getElementById('patientLoginView').style.display='block'; }
+
+/* ===== FORM PAZIENTE FUNZIONANTE ===== */
+function selectOption(val){ document.querySelectorAll('.option-card').forEach(c => c.classList.toggle('selected', c.dataset.val===val)); selectedType = val; document.getElementById('next1').disabled = false; }
 function goStep(step){
+  if(!currentPatient){ alert('Devi prima accedere come paziente.'); return; }
+  if(step === 2 && !selectedType){ alert('Seleziona prima un tipo di richiesta.'); return; }
+  if(step === 3 && !validatePatientFields()) return;
   document.querySelectorAll('.form-step').forEach(s => s.classList.toggle('active', +s.dataset.step===step));
-  [1,2,3].forEach(i=>{
-    const dot = document.getElementById('dot'+i);
-    dot.classList.toggle('active', i===step);
-    dot.classList.toggle('done', i<step);
-    dot.textContent = i<step ? '✓' : i;
-  });
-  document.getElementById('line1').classList.toggle('done', step>1);
-  document.getElementById('line2').classList.toggle('done', step>2);
-  if (step===3){
-    const labels = {prenotazione:'Prenotazione visita RP', emergenza:'Richiesta emergenza RP', chirurgia:'Chirurgia RP', ticket:'Ticket assistenza'};
-    document.getElementById('confType').textContent = labels[selectedType] || '—';
-  }
+  [1,2,3].forEach(i=>{ const dot=document.getElementById('dot'+i); dot.classList.toggle('active', i===step); dot.classList.toggle('done', i<step); dot.textContent = i<step ? '✓' : i; });
+  document.getElementById('line1').classList.toggle('done', step>1); document.getElementById('line2').classList.toggle('done', step>2);
+  if (step===3) document.getElementById('confType').textContent = typeLabel(selectedType);
 }
+function validatePatientFields(){ for (const id of ['charName','mcNick','department']){ const el=document.getElementById(id); if(!el.value.trim()){ el.focus(); alert('Completa i campi obbligatori.'); return false; } } return true; }
 function submitBooking(){
-  document.getElementById('bookingForm').style.display = 'none';
-  document.getElementById('formSuccess').classList.add('active');
+  if(!currentPatient){ alert('Devi prima accedere come paziente.'); return; }
+  if(!validatePatientFields()) return;
   const code = 'SP-RP-' + Math.floor(1000 + Math.random()*9000);
-  document.getElementById('ticketCode').textContent = code;
+  const req = { code, patientNick: currentPatient.nick, type:selectedType, character:document.getElementById('charName').value.trim(), nick:document.getElementById('mcNick').value.trim(), department:document.getElementById('department').value, description:document.getElementById('description').value.trim(), status:selectedType==='emergenza'?'Urgente':'In attesa', createdAt:new Date().toISOString(), messages:[{by:'Sistema Sant Pelatus', role:'Sistema', text:'Richiesta ricevuta. Lo staff medico risponderà appena possibile.', at:nowIT()}] };
+  const list=getRequests(); list.unshift(req); saveRequests(list);
+  document.getElementById('bookingForm').style.display='none'; document.getElementById('formSuccess').classList.add('active'); document.getElementById('ticketCode').textContent=code; document.getElementById('lookupCode').value=code;
+  renderStaffRequests(); renderPatientRequests();
 }
-function resetForm(){
-  document.getElementById('bookingForm').style.display = 'block';
-  document.getElementById('formSuccess').classList.remove('active');
-  selectedType = null;
-  document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('next1').disabled = true;
-  goStep(1);
+function resetForm(){ document.getElementById('bookingForm').reset(); if(currentPatient) document.getElementById('mcNick').value=currentPatient.nick; document.getElementById('bookingForm').style.display='block'; document.getElementById('formSuccess').classList.remove('active'); selectedType=null; document.querySelectorAll('.option-card').forEach(c=>c.classList.remove('selected')); document.getElementById('next1').disabled=true; goStep(1); }
+function lookupTicket(){
+  const code=document.getElementById('lookupCode').value.trim().toUpperCase();
+  const req=getRequests().find(r=>r.code.toUpperCase()===code);
+  const box=document.getElementById('lookupResult');
+  if(!req){ box.innerHTML='<div class="notice">Nessuna richiesta trovata con questo codice.</div>'; return; }
+  if(currentPatient && normalizeNick(req.patientNick||req.nick)!==normalizeNick(currentPatient.nick)){ box.innerHTML='<div class="notice">Questo ticket appartiene a un altro paziente.</div>'; return; }
+  box.innerHTML = renderRequestLight(req);
+}
+function renderMessages(req){ return `<div class="message-thread">${(req.messages||[]).map(m=>`<div class="msg ${m.role==='Paziente'?'patient':'staff'}"><div class="by">${esc(m.by)} · ${esc(m.role)} · ${esc(m.at||'')}</div>${esc(m.text)}</div>`).join('') || '<div class="msg staff"><div class="by">Sistema</div>Nessun messaggio ancora.</div>'}</div>`; }
+function renderRequestLight(req){ return `<div class="request-card-light"><h4>${esc(req.code)} · ${esc(typeLabel(req.type))}</h4><p>Personaggio: <b>${esc(req.character)}</b> · Reparto: ${esc(req.department)} · Stato: ${statusBadge(req.status)}</p><p>${esc(req.description || 'Nessuna descrizione.')}</p>${renderMessages(req)}</div>`; }
+function renderPatientRequests(){
+  const box=document.getElementById('patientRequestsList'); if(!box) return;
+  if(!currentPatient){ box.innerHTML='<div class="notice">Accedi per vedere le tue richieste.</div>'; return; }
+  const mine=getRequests().filter(r=>normalizeNick(r.patientNick||r.nick)===normalizeNick(currentPatient.nick));
+  box.innerHTML = mine.length ? mine.map(renderRequestLight).join('') : '<div class="notice">Non hai ancora inviato richieste.</div>';
 }
 
-/* ===== STAFF LOGIN ===== */
+/* ===== STAFF LOGIN + DASHBOARD ===== */
 function staffLogin(){
-  document.getElementById('staffLoginView').style.display = 'none';
-  document.getElementById('staffDashView').style.display = 'block';
+  const nickInput=document.getElementById('staffNick').value.trim(); const code=document.getElementById('staffCode').value.trim();
+  const user=getUsers().find(u=>normalizeNick(u.nick)===normalizeNick(nickInput) && u.code===code);
+  if(!user){ alert('Login non valido. Capo: ziofede82 / CAPO82. Staff demo: Dr_Reyes / SANTPELATUS2026'); return; }
+  currentUser=user; document.querySelector('.who-name').textContent=user.nick; document.getElementById('currentRoleLabel').textContent=user.owner?'Capo ospedale · Gestione ruoli':`${user.role} · Staff Sant Pelatus`; document.querySelector('.avatar').textContent=user.nick.slice(0,2).toUpperCase();
+  document.getElementById('staffLoginView').style.display='none'; document.getElementById('staffDashView').style.display='block'; document.getElementById('staffDashView').classList.toggle('owner-mode', !!user.owner); renderStaffRequests(); renderStaffUsers();
 }
-function staffLogout(){
-  document.getElementById('staffDashView').style.display = 'none';
-  document.getElementById('staffLoginView').style.display = 'block';
+function staffLogout(){ currentUser=null; document.getElementById('staffDashView').classList.remove('owner-mode'); document.getElementById('staffDashView').style.display='none'; document.getElementById('staffLoginView').style.display='block'; }
+function renderStaffUsers(){
+  const box=document.getElementById('staffUsersList'); if(!box) return; const users=getUsers();
+  box.innerHTML=users.map(u=>`<div class="staff-user-card"><div class="meta"><div class="name">${esc(u.nick)} ${u.owner?'<span class="role-pill">CAPO</span>':''}</div><div class="role">${esc(u.role)} · codice: ${canManageStaff()?esc(u.code):'nascosto'}</div></div><div class="staff-user-actions">${canManageStaff()&&!u.owner?`<select class="status-select" onchange="changeStaffRole('${esc(u.nick)}', this.value)">${['Infermiere','Dottore','Medico','Chirurgo','Primario','Direttore sanitario'].map(r=>`<option ${u.role===r?'selected':''}>${r}</option>`).join('')}</select><button class="mini-btn" onclick="removeStaffUser('${esc(u.nick)}')">Rimuovi</button>`:''}</div></div>`).join('');
 }
-function triggerEmergency(){
-  const toast = document.getElementById('emergencyToast');
-  toast.classList.add('show');
-  setTimeout(()=>toast.classList.remove('show'), 3800);
+function addStaffUser(){ if(!canManageStaff()){ alert('Solo ziofede82 può gestire i ruoli.'); return; } const nick=document.getElementById('newStaffNick').value.trim(), code=document.getElementById('newStaffCode').value.trim(), role=document.getElementById('newStaffRole').value; if(!nick||!code){ alert('Inserisci nickname e codice login.'); return; } if(normalizeNick(nick)===OWNER_NICK){ alert('Il capo ziofede82 esiste già e non si modifica.'); return; } let users=getUsers().filter(u=>normalizeNick(u.nick)!==normalizeNick(nick)); users.push({nick, code, role, owner:false}); saveUsers(users); document.getElementById('newStaffNick').value=''; document.getElementById('newStaffCode').value=''; renderStaffUsers(); }
+function changeStaffRole(nick, role){ if(!canManageStaff()) return; saveUsers(getUsers().map(u=>normalizeNick(u.nick)===normalizeNick(nick)&&!u.owner?{...u,role}:u)); renderStaffUsers(); }
+function removeStaffUser(nick){ if(!canManageStaff()) return; if(!confirm('Rimuovere questo membro staff?')) return; saveUsers(getUsers().filter(u=>normalizeNick(u.nick)!==normalizeNick(nick)||u.owner)); renderStaffUsers(); }
+function renderStaffRequests(){
+  const box=document.getElementById('staffRequests'); if(!box) return; const list=getRequests();
+  if(!list.length){ box.innerHTML='<div class="shift-row"><span class="n">Nessuna richiesta ricevuta</span><span class="t">live</span></div>'; return; }
+  box.innerHTML=list.map(r=>`<div class="staff-request-card"><div class="top"><div style="display:flex;align-items:center;gap:10px;min-width:0;"><span class="priority-dot ${priorityClass(r.type)}"></span><div><div class="pname">${esc(r.character)} <span class="code">${esc(r.code)}</span></div><div class="proom">${esc(typeLabel(r.type))} · ${esc(r.department)} · paziente ${esc(r.patientNick||r.nick)}</div></div></div><select class="status-select" onchange="updateRequestStatus('${esc(r.code)}', this.value)">${['In attesa','Urgente','In cura','Completata'].map(s=>`<option ${r.status===s?'selected':''}>${s}</option>`).join('')}</select></div><div class="desc">${esc(r.description || 'Nessuna descrizione inserita.')}</div>${renderStaffMessages(r)}<div class="reply-box"><textarea id="reply-${esc(r.code)}" placeholder="Scrivi risposta professionale al paziente..."></textarea><button class="btn btn-primary btn-sm" onclick="sendStaffReply('${esc(r.code)}')">Invia risposta al paziente</button></div></div>`).join('');
 }
-
-/* ===== MOBILE NAV (simple toggle to area links) ===== */
-document.getElementById('burgerBtn').addEventListener('click', () => {
-  document.getElementById('aree').scrollIntoView({behavior:'smooth'});
-});
+function renderStaffMessages(req){ return `<div class="message-thread" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);">${(req.messages||[]).map(m=>`<div class="msg ${m.role==='Paziente'?'patient':'staff'}"><div class="by">${esc(m.by)} · ${esc(m.role)} · ${esc(m.at||'')}</div>${esc(m.text)}</div>`).join('')}</div>`; }
+function updateRequestStatus(code,status){ const list=getRequests().map(r=>r.code===code?{...r,status}:r); saveRequests(list); renderStaffRequests(); renderPatientRequests(); }
+function sendStaffReply(code){
+  if(!currentUser){ alert('Devi accedere come staff.'); return; }
+  const el=document.getElementById('reply-'+code); const text=el ? el.value.trim() : '';
+  if(!text){ alert('Scrivi una risposta prima di inviare.'); return; }
+  const list=getRequests().map(r=>r.code===code?{...r,status:r.status==='In attesa'?'In cura':r.status,messages:[...(r.messages||[]),{by:currentUser.nick,role:currentUser.role,text,at:nowIT()}]}:r);
+  saveRequests(list); renderStaffRequests(); renderPatientRequests();
+}
+function triggerEmergency(){ const toast=document.getElementById('emergencyToast'); toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),3800); }
+document.getElementById('burgerBtn').addEventListener('click', () => { document.getElementById('aree').scrollIntoView({behavior:'smooth'}); });
 </script>
 </body>
 </html>
